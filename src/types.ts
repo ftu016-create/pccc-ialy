@@ -1,3 +1,5 @@
+export type UserRole = 'admin' | 'viewer';
+
 export interface Person {
   id: string;
   name: string;

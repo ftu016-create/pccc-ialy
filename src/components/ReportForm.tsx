@@ -9,16 +9,16 @@ import {
   RotateCcw,
   CheckCircle,
   HelpCircle,
-  Sparkles,
   ChevronDown,
   UserPlus,
   Eye,
   UploadCloud,
 } from 'lucide-react';
-import { ReportData, Person, EquipItem, FireSafetyItem, EscapeItem } from '../types';
+import { ReportData, Person, EquipItem, FireSafetyItem, EscapeItem, UserRole } from '../types';
 import { DEFAULT_STAFF_DIRECTORY } from '../data/defaultData';
 import { getSignatureForPerson } from '../data/sampleSignatures';
 import { SignatureModal } from './SignatureModal';
+import { Lock } from 'lucide-react';
 
 interface ReportFormProps {
   data: ReportData;
@@ -28,6 +28,8 @@ interface ReportFormProps {
   onExportWord: () => void;
   onPreviewPrint: () => void;
   staffDirectory: { name: string; role: string }[];
+  userRole?: UserRole;
+  onOpenAdminLogin?: () => void;
 }
 
 export const ReportForm: React.FC<ReportFormProps> = ({
@@ -38,8 +40,9 @@ export const ReportForm: React.FC<ReportFormProps> = ({
   onExportWord,
   onPreviewPrint,
   staffDirectory,
+  userRole = 'viewer',
+  onOpenAdminLogin,
 }) => {
-  const [highlightRedBoxes, setHighlightRedBoxes] = useState(true);
   const [signingPerson, setSigningPerson] = useState<{ name: string; isManager?: boolean } | null>(null);
 
   const updateField = <K extends keyof ReportData>(field: K, value: ReportData[K]) => {
@@ -235,56 +238,43 @@ export const ReportForm: React.FC<ReportFormProps> = ({
     );
   };
 
-  const redBoxStyle = highlightRedBoxes
-    ? 'ring-2 ring-red-500/80 ring-offset-2 border-red-300'
-    : 'border-slate-200';
-
   return (
     <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-6 space-y-6">
-      {/* Top Banner Guide */}
-      <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-slate-800">
-              Chế độ chỉnh sửa biên bản Mẫu số PC02 (NMTĐ Ialy)
+      {/* Role Alert Banner if Viewer */}
+      {userRole !== 'admin' && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5 text-amber-700" />
             </div>
-            <div className="text-xs text-slate-500">
-              Dữ liệu được điền sẵn đầy đủ các nội dung kiểm tra. Bạn có thể thay đổi bất kỳ ô nào, thêm/bớt dòng linh hoạt.
+            <div>
+              <div className="text-sm font-bold text-amber-900">
+                Chế độ Chỉ xem (Dành cho Đồng nghiệp)
+              </div>
+              <div className="text-xs text-amber-800">
+                Bạn đang xem biểu mẫu ở chế độ chỉ đọc. Đăng nhập Quản trị viên bằng mã PIN để thực hiện lưu hoặc chỉnh sửa biên bản.
+              </div>
             </div>
           </div>
+          {onOpenAdminLogin && (
+            <button
+              type="button"
+              onClick={onOpenAdminLogin}
+              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              Đăng nhập Admin
+            </button>
+          )}
         </div>
-
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700 select-none">
-            <input
-              type="checkbox"
-              checked={highlightRedBoxes}
-              onChange={(e) => setHighlightRedBoxes(e.target.checked)}
-              className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
-            />
-            <span className="flex items-center gap-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-              Đánh dấu viền đỏ các mục theo tài liệu gốc
-            </span>
-          </label>
-        </div>
-      </div>
+      )}
 
       {/* ---------------- CARD 1: THÔNG TIN CHUNG & TIÊU ĐỀ ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
           <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
             <span>🏛️</span>
             <span>Thông tin văn bản & Thời gian kiểm tra</span>
           </h3>
-          {highlightRedBoxes && (
-            <span className="text-[11px] bg-red-50 text-red-700 font-bold px-2 py-0.5 rounded border border-red-200">
-              Khung thông tin gốc
-            </span>
-          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -455,7 +445,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 2: THÀNH PHẦN THAM GIA (CHÚNG TÔI GỒM) ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
@@ -573,7 +563,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 3: PHƯƠNG TIỆN, HỆ THỐNG PCCC (TABLE 1) ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
@@ -584,12 +574,6 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               Bảng kiểm kê thiết bị tại Nhà máy thủy điện Ialy (Mục I) và Ialy Mở rộng (Mục II). Mỗi mục đều có nút thêm/xóa dòng.
             </span>
           </div>
-
-          {highlightRedBoxes && (
-            <span className="text-[11px] bg-red-50 text-red-700 font-bold px-2 py-0.5 rounded border border-red-200">
-              Khung bảng thiết bị gốc
-            </span>
-          )}
         </div>
 
         {/* Table header */}
@@ -733,7 +717,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 4: NGUỒN LỬA, NGUỒN NHIỆT (TABLE 2) ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
@@ -830,7 +814,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 5: THOÁT NẠN, NGĂN CHÁY (TABLE 3) ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
@@ -914,7 +898,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 6: CHẤP HÀNH NỘI QUY & KIẾN NGHỊ ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="space-y-4">
           <div>
             <h3 className="font-bold text-sm text-[#17365d] mb-1.5">
@@ -968,7 +952,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
       </div>
 
       {/* ---------------- CARD 7: CHỮ KÝ & NGƯỜI KÝ (CHIA 2 CỘT NHƯ TÀI LIỆU GỐC) ---------------- */}
-      <div className={`bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border ${redBoxStyle}`}>
+      <div className="bg-white rounded-xl shadow-xs p-5 sm:p-6 transition-all border border-slate-200">
         <div className="flex flex-wrap items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
@@ -979,12 +963,6 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               Chữ ký điện tử nét mực xanh chân thực được tích hợp tự động cho các cán bộ. Bấm vào chữ ký để vẽ lại hoặc đổi mẫu.
             </span>
           </div>
-
-          {highlightRedBoxes && (
-            <span className="text-[11px] bg-red-50 text-red-700 font-bold px-2 py-0.5 rounded border border-red-200">
-              Khung chữ ký gốc (2 cột)
-            </span>
-          )}
         </div>
 
         {/* 2-Column Signatures Preview/Editor */}

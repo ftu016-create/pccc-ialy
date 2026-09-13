@@ -13,25 +13,34 @@ import {
   FileSpreadsheet,
   Upload,
   AlertCircle,
+  Eye,
+  Lock,
+  Shield,
 } from 'lucide-react';
-import { ReportData } from '../types';
+import { ReportData, UserRole } from '../types';
 import { storageService } from '../services/storage';
 import { exportReportToDocx } from '../services/exportDocx';
 
 interface ReportHistoryProps {
   reports: ReportData[];
   onSelectReport: (report: ReportData) => void;
+  onViewReportDetail: (report: ReportData) => void;
   onNewReport: () => void;
   onPreviewPrint: (report: ReportData) => void;
   onRefresh: () => void;
+  userRole: UserRole;
+  onOpenAdminLogin: () => void;
 }
 
 export const ReportHistory: React.FC<ReportHistoryProps> = ({
   reports,
   onSelectReport,
+  onViewReportDetail,
   onNewReport,
   onPreviewPrint,
   onRefresh,
+  userRole,
+  onOpenAdminLogin,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -110,36 +119,39 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center flex-wrap gap-2.5">
-            <button
-              onClick={onNewReport}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Tạo báo cáo mới</span>
-            </button>
+          {userRole === 'admin' && (
+            <div className="flex items-center flex-wrap gap-2.5">
+              <button
+                onClick={onNewReport}
+                title="Tạo biên bản cho tháng mới"
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Tạo báo cáo mới</span>
+              </button>
 
-            <button
-              onClick={handleExportBackup}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition-colors"
-              title="Tải về file sao lưu toàn bộ biên bản"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Sao lưu JSON</span>
-            </button>
+              <button
+                onClick={handleExportBackup}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition-colors cursor-pointer"
+                title="Tải về file sao lưu toàn bộ biên bản"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Sao lưu JSON</span>
+              </button>
 
-            <label className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 cursor-pointer transition-colors">
-              <Upload className="w-3.5 h-3.5" />
-              <span>Nhập sao lưu</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={handleImportBackup}
-              />
-            </label>
-          </div>
+              <label className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 cursor-pointer transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Nhập sao lưu</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleImportBackup}
+                />
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Search bar */}
@@ -213,18 +225,31 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        {/* Xem chi tiết văn bản chuẩn A4 (cho cả đồng nghiệp & admin) */}
                         <button
-                          onClick={() => onSelectReport(item)}
-                          className="px-2.5 py-1.5 bg-[#3498db] hover:bg-[#2980b9] text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs"
-                          title="Mở chỉnh sửa báo cáo này"
+                          onClick={() => onViewReportDetail(item)}
+                          className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
+                          title="Xem chi tiết văn bản Mẫu PC02 định dạng chuẩn A4"
                         >
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>Mở</span>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Xem</span>
                         </button>
+
+                        {/* Mở soạn thảo / chỉnh sửa: Chỉ hiển thị cho Admin */}
+                        {userRole === 'admin' && (
+                          <button
+                            onClick={() => onSelectReport(item)}
+                            className="px-2.5 py-1.5 bg-[#3498db] hover:bg-[#2980b9] text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title="Mở chỉnh sửa dữ liệu báo cáo này"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Sửa</span>
+                          </button>
+                        )}
 
                         <button
                           onClick={() => exportReportToDocx(item)}
-                          className="px-2.5 py-1.5 bg-[#218838] hover:bg-[#1e7e34] text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs"
+                          className="px-2.5 py-1.5 bg-[#218838] hover:bg-[#1e7e34] text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
                           title="Tải văn bản Word .docx"
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -233,45 +258,51 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
 
                         <button
                           onClick={() => onPreviewPrint(item)}
-                          className="px-2.5 py-1.5 bg-sky-700 hover:bg-sky-600 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs"
+                          className="px-2.5 py-1.5 bg-sky-700 hover:bg-sky-600 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
                           title="Xem trước định dạng chuẩn A4 & In"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           <span>In / PDF</span>
                         </button>
 
-                        <button
-                          onClick={() => handleDuplicate(item.id)}
-                          className="px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs font-semibold"
-                          title="Tạo bản sao"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-
-                        {deleteConfirmId === item.id ? (
-                          <div className="flex items-center gap-1 bg-rose-50 border border-rose-300 p-1 rounded">
-                            <span className="text-[11px] text-rose-700 font-bold">Xóa?</span>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="px-2 py-0.5 bg-rose-600 text-white text-xs rounded hover:bg-rose-700 font-bold"
-                            >
-                              Có
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirmId(null)}
-                              className="px-2 py-0.5 bg-slate-300 text-slate-800 text-xs rounded hover:bg-slate-400"
-                            >
-                              Không
-                            </button>
-                          </div>
-                        ) : (
+                        {/* Tạo bản sao: Chỉ hiển thị cho Admin */}
+                        {userRole === 'admin' && (
                           <button
-                            onClick={() => setDeleteConfirmId(item.id)}
-                            className="px-2 py-1.5 bg-[#dc4c4c] hover:bg-[#c62828] text-white rounded text-xs font-semibold shadow-2xs"
-                            title="Xóa báo cáo"
+                            onClick={() => handleDuplicate(item.id)}
+                            className="px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs font-semibold cursor-pointer"
+                            title="Tạo bản sao biên bản này"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
+                        )}
+
+                        {/* Xóa báo cáo: Chỉ cho Admin */}
+                        {userRole === 'admin' && (
+                          deleteConfirmId === item.id ? (
+                            <div className="flex items-center gap-1 bg-rose-50 border border-rose-300 p-1 rounded">
+                              <span className="text-[11px] text-rose-700 font-bold">Xóa?</span>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="px-2 py-0.5 bg-rose-600 text-white text-xs rounded hover:bg-rose-700 font-bold cursor-pointer"
+                              >
+                                Có
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmId(null)}
+                                className="px-2 py-0.5 bg-slate-300 text-slate-800 text-xs rounded hover:bg-slate-400 cursor-pointer"
+                              >
+                                Không
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeleteConfirmId(item.id)}
+                              className="px-2 py-1.5 bg-[#dc4c4c] hover:bg-[#c62828] text-white rounded text-xs font-semibold shadow-2xs cursor-pointer"
+                              title="Xóa báo cáo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )
                         )}
                       </div>
                     </td>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { ReportData } from './types';
+import React, { useState, useEffect } from 'react';
+import { ReportData, UserRole } from './types';
 import { storageService } from './services/storage';
+import { adminAuthService } from './services/adminAuth';
 import { createNewReport } from './data/defaultData';
 import { exportReportToDocx } from './services/exportDocx';
 import { exportElementToPdf, generatePdfFilename } from './services/exportPdf';
@@ -10,7 +11,7 @@ import { ReportDetailView } from './components/ReportDetailView';
 import { ReportHistory } from './components/ReportHistory';
 import { PrintPreviewModal } from './components/PrintPreviewModal';
 import { StaffManagerModal } from './components/StaffManagerModal';
-import { DeployVercelModal } from './components/DeployVercelModal';
+import { AdminPinModal } from './components/AdminPinModal';
 import { DocumentA4Content } from './components/DocumentA4Content';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -20,19 +21,49 @@ export default function App() {
     const list = storageService.getAllReports();
     return list.length > 0 ? list[0] : createNewReport();
   });
-  const [currentView, setCurrentView] = useState<'form' | 'preview' | 'history'>('form');
+  const [userRole, setUserRole] = useState<UserRole>(() => adminAuthService.getUserRole());
+  const [currentView, setCurrentView] = useState<'form' | 'preview' | 'history'>(() => {
+    return adminAuthService.getUserRole() === 'admin' ? 'form' : 'history';
+  });
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
-  const [showDeployModal, setShowDeployModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<'login' | 'change_pin'>('login');
   const [staffDirectory, setStaffDirectory] = useState(() => storageService.getStaffDirectory());
+
+  useEffect(() => {
+    const unsubscribe = adminAuthService.subscribe((role) => {
+      setUserRole(role);
+      if (role === 'viewer' && currentView === 'form') {
+        setCurrentView('history');
+      }
+    });
+    return unsubscribe;
+  }, [currentView]);
 
   const refreshReports = () => {
     const updated = storageService.getAllReports();
     setReports(updated);
+  };
+
+  const handleOpenAdminLogin = () => {
+    setPinModalMode('login');
+    setShowPinModal(true);
+  };
+
+  const handleChangePin = () => {
+    setPinModalMode('change_pin');
+    setShowPinModal(true);
+  };
+
+  const handleAdminLogout = () => {
+    adminAuthService.logout();
+    setSaveMessage('Đã chuyển về chế độ Đồng nghiệp (Chỉ xem)');
+    setTimeout(() => setSaveMessage(null), 3000);
   };
 
   const handleReportChange = (updated: ReportData) => {
@@ -41,6 +72,10 @@ export default function App() {
   };
 
   const handleSaveReport = () => {
+    if (userRole !== 'admin') {
+      handleOpenAdminLogin();
+      return;
+    }
     setIsSaving(true);
     setTimeout(() => {
       storageService.saveReport(currentReport);
@@ -55,6 +90,11 @@ export default function App() {
   };
 
   const handleNewReport = () => {
+    if (userRole !== 'admin') {
+      handleOpenAdminLogin();
+      return;
+    }
+
     if (isDirty) {
       const confirmLeave = window.confirm(
         'Bạn có thay đổi chưa lưu. Bạn có chắc muốn tạo báo cáo mới?'
@@ -83,9 +123,11 @@ export default function App() {
 
   const handleExportWord = async () => {
     // Auto-save before export to ensure persistence
-    storageService.saveReport(currentReport);
-    setIsDirty(false);
-    refreshReports();
+    if (userRole === 'admin') {
+      storageService.saveReport(currentReport);
+      setIsDirty(false);
+      refreshReports();
+    }
     setSaveMessage('Đang tải file Word (.docx)...');
     setTimeout(() => setSaveMessage(null), 2500);
     await exportReportToDocx(currentReport);
@@ -95,13 +137,15 @@ export default function App() {
     setIsExportingPdf(true);
     setSaveMessage('Đang tạo file PDF...');
     try {
-      storageService.saveReport(currentReport);
-      setIsDirty(false);
-      refreshReports();
+      if (userRole === 'admin') {
+        storageService.saveReport(currentReport);
+        setIsDirty(false);
+        refreshReports();
+      }
 
-      let docEl = document.getElementById('detail-document-canvas') ||
-                  document.getElementById('print-document') ||
-                  document.getElementById('global-pdf-document');
+      const docEl = document.getElementById('detail-document-canvas') ||
+                    document.getElementById('print-document') ||
+                    document.getElementById('global-pdf-document');
 
       if (docEl) {
         const filename = generatePdfFilename(currentReport);
@@ -135,7 +179,13 @@ export default function App() {
       {/* Navigation Topbar with atvsld-ialy layout */}
       <Topbar
         currentView={currentView}
-        onNavigate={(view) => setCurrentView(view)}
+        onNavigate={(view) => {
+          if (view === 'form' && userRole !== 'admin') {
+            handleOpenAdminLogin();
+            return;
+          }
+          setCurrentView(view);
+        }}
         currentReport={currentReport}
         reportsList={reports}
         onSelectReport={handleSelectReport}
@@ -146,7 +196,10 @@ export default function App() {
         onExportPdf={handleExportPdf}
         isExportingPdf={isExportingPdf}
         onOpenStaffModal={() => setShowStaffModal(true)}
-        onOpenDeployModal={() => setShowDeployModal(true)}
+        userRole={userRole}
+        onOpenAdminLogin={handleOpenAdminLogin}
+        onAdminLogout={handleAdminLogout}
+        onChangePin={handleChangePin}
         isDirty={isDirty}
         isSaving={isSaving}
         saveMessage={saveMessage}
@@ -171,15 +224,26 @@ export default function App() {
             onExportWord={handleExportWord}
             onPreviewPrint={() => handlePreviewPrint()}
             staffDirectory={staffDirectory}
+            userRole={userRole}
+            onOpenAdminLogin={handleOpenAdminLogin}
           />
         )}
 
         {currentView === 'preview' && (
           <ReportDetailView
             report={currentReport}
-            onEdit={() => setCurrentView('form')}
+            onBackToHistory={() => setCurrentView('history')}
+            onEdit={() => {
+              if (userRole === 'admin') {
+                setCurrentView('form');
+              } else {
+                handleOpenAdminLogin();
+              }
+            }}
             onExportWord={handleExportWord}
             onPrint={() => handlePreviewPrint()}
+            userRole={userRole}
+            onOpenAdminLogin={handleOpenAdminLogin}
           />
         )}
 
@@ -188,11 +252,21 @@ export default function App() {
             reports={reports}
             onSelectReport={(rep) => {
               handleSelectReport(rep);
-              setCurrentView('form');
+              if (userRole === 'admin') {
+                setCurrentView('form');
+              } else {
+                setCurrentView('preview');
+              }
+            }}
+            onViewReportDetail={(rep) => {
+              handleSelectReport(rep);
+              setCurrentView('preview');
             }}
             onNewReport={handleNewReport}
             onPreviewPrint={(rep) => handlePreviewPrint(rep)}
             onRefresh={refreshReports}
+            userRole={userRole}
+            onOpenAdminLogin={handleOpenAdminLogin}
           />
         )}
       </main>
@@ -218,10 +292,25 @@ export default function App() {
         />
       )}
 
-      {/* GitHub & Vercel Auto Link Modal */}
-      {showDeployModal && (
-        <DeployVercelModal
-          onClose={() => setShowDeployModal(false)}
+      {/* Admin PIN Authentication & Change PIN Modal */}
+      {showPinModal && (
+        <AdminPinModal
+          isOpen={true}
+          mode={pinModalMode}
+          initialMode={pinModalMode}
+          onClose={() => setShowPinModal(false)}
+          onSuccess={() => {
+            setShowPinModal(false);
+            if (pinModalMode === 'login') {
+              setSaveMessage('Đăng nhập Quản trị viên thành công!');
+              // Automatically switch to form editing if user logged in
+              setCurrentView('form');
+            } else {
+              setSaveMessage('Đổi mã PIN Quản trị viên thành công (Đã đồng bộ sang máy khác)!');
+            }
+            setTimeout(() => setSaveMessage(null), 3000);
+          }}
+          onChangePinClick={() => setPinModalMode('change_pin')}
         />
       )}
     </div>

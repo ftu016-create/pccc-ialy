@@ -49,7 +49,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ report, on
             <span>Quay lại</span>
           </button>
           <span className="font-bold text-sm hidden sm:inline ml-2 text-blue-100">
-            Xem trước Mẫu PC02 (A4 • Times New Roman 13pt)
+            Xem trước văn bản Mẫu PC02
           </span>
         </div>
 
