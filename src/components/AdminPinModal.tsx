@@ -348,7 +348,11 @@ export const AdminPinModal: React.FC<AdminPinModalProps> = ({
                   disabled={isSubmitting}
                   className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  <KeyRound className="w-3.5 h-3.5" />
+                  {isSubmitting ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <KeyRound className="w-3.5 h-3.5" />
+                  )}
                   <span>{isSubmitting ? 'Đang lưu & đồng bộ...' : 'Đổi mã PIN'}</span>
                 </button>
               </div>
