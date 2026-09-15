@@ -1,6 +1,7 @@
 import React from 'react';
-import { ReportData } from '../types';
+import { ReportData, InspectionPhoto } from '../types';
 import { getSignatureForPerson } from '../data/sampleSignatures';
+import { getReportMonthDisplay } from '../utils/photoUtils';
 
 interface DocumentA4ContentProps {
   report: ReportData;
@@ -347,6 +348,131 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
           </div>
         </div>
       </div>
+
+      {/* --- PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG ... (4 HÌNH / 1 TRANG) --- */}
+      {(() => {
+        const displayMonth = getReportMonthDisplay(report.report_month, report.header_month);
+        const photoChunks: InspectionPhoto[][] = [];
+        if (report.photos && report.photos.length > 0) {
+          for (let i = 0; i < report.photos.length; i += 4) {
+            photoChunks.push(report.photos.slice(i, i + 4));
+          }
+        }
+
+        return (
+          <>
+            {photoChunks.map((chunk, chunkIdx) => (
+              <div
+                key={`photo-page-${chunkIdx}`}
+                className="mt-8 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page min-h-[1050px] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="text-center mb-5">
+                    <h3 className="font-bold text-[13.5pt] uppercase tracking-wide">
+                      PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG {displayMonth}
+                    </h3>
+                    <p className="italic text-[11pt] text-slate-700 mt-1">
+                      (Kèm theo Biên bản tự kiểm tra số: {report.so || '.../VHIALY'} ngày {report.header_day} tháng {report.header_month} năm {report.header_year} của PX Vận hành Ialy)
+                    </p>
+                  </div>
+
+                  {/* 2x2 Grid: Strictly 4 photos per page */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {chunk.map((photo, pIdx) => {
+                      const globalIndex = chunkIdx * 4 + pIdx;
+                      const statusText =
+                        photo.status === 'passed'
+                          ? 'Đạt - Đảm bảo an toàn'
+                          : photo.status === 'warning'
+                          ? 'Cần lưu ý theo dõi'
+                          : 'Không đạt - Đề nghị khắc phục';
+
+                      return (
+                        <div
+                          key={photo.id}
+                          className="border border-slate-400 p-2 rounded-xs bg-white flex flex-col justify-between break-inside-avoid shadow-2xs print:shadow-none"
+                        >
+                          <div>
+                            <div className="w-full h-40 bg-slate-100 border border-slate-300 rounded-xs overflow-hidden flex items-center justify-center mb-1.5">
+                              <img
+                                src={photo.imageData}
+                                alt={photo.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="font-bold text-[11pt] text-black leading-tight mb-1">
+                              Hình {globalIndex + 1}: {photo.title}
+                            </div>
+                            <div className="text-[10pt] text-slate-800 leading-snug">
+                              <span className="font-semibold">Vị trí:</span> {photo.location}
+                            </div>
+                            <div className="text-[10pt] text-slate-800 leading-snug">
+                              <span className="font-semibold">Đánh giá:</span>{' '}
+                              <span className={photo.status === 'passed' ? 'text-emerald-800 font-semibold' : 'text-amber-800 font-semibold'}>
+                                {statusText}
+                              </span>
+                            </div>
+                            <div className="text-[9.5pt] italic text-slate-700 mt-0.5 leading-snug">
+                              <span className="font-semibold not-italic">Ghi nhận:</span> {photo.description}
+                            </div>
+                          </div>
+                          {photo.capturedAt && (
+                            <div className="text-[9pt] text-slate-500 text-right mt-1.5 border-t border-slate-200 pt-0.5">
+                              Thời điểm kiểm tra: {photo.capturedAt}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {chunkIdx === photoChunks.length - 1 && report.attachedPdfs && report.attachedPdfs.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-slate-300 text-[10.5pt] italic text-slate-700">
+                    <span className="font-bold not-italic">Hồ sơ, sổ theo dõi kèm theo: </span>
+                    {report.attachedPdfs.map((pdf) => pdf.name).join('; ')}.
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* --- PHỤ LỤC II: TÀI LIỆU, SỔ THEO DÕI ĐÍNH KÈM (PDF DẠNG GIẤY NGANG) --- */}
+            {report.attachedPdfs &&
+              report.attachedPdfs
+                .filter((pdf) => pdf.includedInExport !== false)
+                .map((pdf) => {
+                  if (!pdf.pageImages || pdf.pageImages.length === 0) return null;
+                  return pdf.pageImages.map((pageImg, pageIdx) => (
+                    <div
+                      key={`pdf-page-${pdf.id}-${pageIdx}`}
+                      className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="text-center mb-3">
+                          <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800">
+                            PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
+                          </h3>
+                          <p className="font-semibold text-[11pt] text-blue-900 mt-0.5">
+                            {pdf.name}
+                          </p>
+                          <p className="italic text-[10pt] text-slate-600">
+                            (Kèm theo Biên bản tự kiểm tra PCCC số: {report.so || '.../VHIALY'})
+                          </p>
+                        </div>
+                        <div className="flex justify-center items-center bg-slate-50 p-2 sm:p-4 border border-slate-300 rounded shadow-xs overflow-hidden">
+                          <img
+                            src={pageImg}
+                            alt={pdf.name}
+                            className="w-full h-auto max-h-[620px] object-contain rounded-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ));
+                })}
+          </>
+        );
+      })()}
     </div>
   );
 };

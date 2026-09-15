@@ -27,7 +27,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ report, on
     try {
       setIsExportingPdf(true);
       const filename = generatePdfFilename(report);
-      await exportElementToPdf(docEl, filename);
+      await exportElementToPdf(docEl, filename, report);
     } catch (err) {
       console.error('Error downloading PDF:', err);
       window.print();

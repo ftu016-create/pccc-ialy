@@ -149,7 +149,7 @@ export default function App() {
 
       if (docEl) {
         const filename = generatePdfFilename(currentReport);
-        await exportElementToPdf(docEl, filename);
+        await exportElementToPdf(docEl, filename, currentReport);
         setSaveMessage('Đã tải xong file PDF!');
       } else {
         handlePreviewPrint();

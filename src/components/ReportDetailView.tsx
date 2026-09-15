@@ -35,7 +35,7 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
       const prevTransform = docEl.style.transform;
       docEl.style.transform = 'none';
       const filename = generatePdfFilename(report);
-      await exportElementToPdf(docEl, filename);
+      await exportElementToPdf(docEl, filename, report);
       docEl.style.transform = prevTransform;
     } catch (err) {
       console.error('Error downloading PDF from detail view:', err);

@@ -4,23 +4,30 @@ import { createNewReport, DEFAULT_STAFF_DIRECTORY } from '../data/defaultData';
 const REPORTS_KEY = 'pccc_ialy_reports_v1';
 const STAFF_KEY = 'pccc_ialy_staff_directory_v1';
 
+// In-memory cache to ensure full PDF and image binary data is never lost during session
+const memoryReportsCache: Map<string, ReportData> = new Map();
+
 export const storageService = {
   getAllReports(): ReportData[] {
     try {
       const data = localStorage.getItem(REPORTS_KEY);
+      let parsed: ReportData[] = [];
       if (!data) {
         // Seed with initial report from PDF
         const initial = createNewReport();
-        localStorage.setItem(REPORTS_KEY, JSON.stringify([initial]));
+        this.saveReport(initial);
         return [initial];
       }
-      const parsed: ReportData[] = JSON.parse(data);
-      // Ensure clean 1-line inspection_areas if legacy text exists
+      parsed = JSON.parse(data);
+
+      // Merge with in-memory cache to restore any large binary payloads (e.g. attached PDFs)
       return parsed.map((r) => {
-        if (r.inspection_areas && (r.inspection_areas.includes('Cửa Nhận Nước') || r.inspection_areas.includes('Cửa Nhận nước'))) {
+        const cached = memoryReportsCache.get(r.id);
+        const merged = cached ? { ...r, ...cached } : r;
+        if (merged.inspection_areas && (merged.inspection_areas.includes('Cửa Nhận Nước') || merged.inspection_areas.includes('Cửa Nhận nước'))) {
           return {
-            ...r,
-            inspection_areas: r.inspection_areas
+            ...merged,
+            inspection_areas: merged.inspection_areas
               .replace(
                 '- NMTĐ Ialy: Gian máy; Gian biến áp; Nhà PK; Trạm 500 kV Ialy; Cửa Nhận Nước.',
                 '- NMTĐ Ialy: Gian máy, Gian biến áp, Nhà PK, Trạm 500 kV, Cửa nhận nước.'
@@ -31,35 +38,68 @@ export const storageService = {
               ),
           };
         }
-        return r;
+        return merged;
       });
     } catch (e) {
       console.error('Failed to load reports from localStorage', e);
+      if (memoryReportsCache.size > 0) {
+        return Array.from(memoryReportsCache.values());
+      }
       return [createNewReport()];
     }
   },
 
   getReportById(id: string): ReportData | null {
+    if (memoryReportsCache.has(id)) {
+      return memoryReportsCache.get(id)!;
+    }
     const all = this.getAllReports();
     return all.find((r) => r.id === id) || null;
   },
 
   saveReport(report: ReportData): void {
-    const all = this.getAllReports();
-    const existingIndex = all.findIndex((r) => r.id === report.id);
-    const now = new Date().toISOString();
-    const updated = {
-      ...report,
-      updated_at: now,
-    };
+    // 1. Update in-memory cache with full fidelity
+    memoryReportsCache.set(report.id, report);
 
-    if (existingIndex >= 0) {
-      all[existingIndex] = updated;
-    } else {
-      all.unshift(updated);
+    // 2. Persist to localStorage safely with quota fallback
+    try {
+      const all = this.getAllReports();
+      const existingIndex = all.findIndex((r) => r.id === report.id);
+      const now = new Date().toISOString();
+      const updated = {
+        ...report,
+        updated_at: now,
+      };
+
+      if (existingIndex >= 0) {
+        all[existingIndex] = updated;
+      } else {
+        all.unshift(updated);
+      }
+
+      localStorage.setItem(REPORTS_KEY, JSON.stringify(all));
+    } catch (quotaError) {
+      console.warn('LocalStorage quota limit reached. Saving lightweight representation:', quotaError);
+      try {
+        // Fallback: save current report, but strip bulky pageImages from other reports
+        const all = Array.from(memoryReportsCache.values());
+        const lightweight = all.map((r) => {
+          if (r.id !== report.id && r.attachedPdfs) {
+            return {
+              ...r,
+              attachedPdfs: r.attachedPdfs.map((p) => ({
+                ...p,
+                pageImages: [],
+              })),
+            };
+          }
+          return r;
+        });
+        localStorage.setItem(REPORTS_KEY, JSON.stringify(lightweight));
+      } catch (innerErr) {
+        console.warn('LocalStorage save skipped to prevent crash, active session remains cached in memory:', innerErr);
+      }
     }
-
-    localStorage.setItem(REPORTS_KEY, JSON.stringify(all));
   },
 
   deleteReport(id: string): void {

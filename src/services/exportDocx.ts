@@ -14,11 +14,14 @@ import {
   ITableCellBorders,
   IBorderOptions,
   ImageRun,
+  PageOrientation,
 } from 'docx';
 import saveAs from 'file-saver';
 import { ReportData } from '../types';
 import { getSignatureForPerson } from '../data/sampleSignatures';
 import { signatureToPngBytes } from '../utils/signatureUtils';
+import { imageToPngBytes, getImageDimensionsAndBytes, getReportMonthDisplay } from '../utils/photoUtils';
+import { renderPdfPagesToDataUrls } from '../utils/pdfRenderUtils';
 
 const FONT_NAME = 'Times New Roman';
 const SIZE_MAIN = 26; // 13pt in half-points
@@ -765,31 +768,384 @@ export async function exportReportToDocx(report: ReportData) {
     rows: [...signatureRows, finalSignRow],
   });
 
-  // Create Document
-  const doc = new Document({
-    styles: {
-      default: {
-        document: {
-          run: {
-            font: FONT_NAME,
-            size: SIZE_MAIN,
+  // Photo Annex & Attached Document Pages
+  const photoAppendixElements: (Paragraph | Table)[] = [];
+  const displayMonth = getReportMonthDisplay(report.report_month, report.header_month);
+
+  // --- PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG ... (4 HÌNH / TRANG) ---
+  if (report.photos && report.photos.length > 0) {
+    const totalPhotos = report.photos.length;
+
+    // Process photos in chunks of 4 (strictly 4 photos per page)
+    for (let c = 0; c < totalPhotos; c += 4) {
+      const pageIndex = Math.floor(c / 4) + 1;
+      const chunk = report.photos.slice(c, c + 4);
+
+      // Page Header for each 4-photo page
+      photoAppendixElements.push(
+        new Paragraph({
+          pageBreakBefore: true,
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 180, after: 40 },
+          children: [
+            new TextRun({
+              text: `PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG ${displayMonth}`,
+              bold: true,
+              font: FONT_NAME,
+              size: SIZE_TITLE,
+            }),
+          ],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 20, after: 120 },
+          children: [
+            new TextRun({
+              text: `(Kèm theo Biên bản tự kiểm tra số: ${report.so || '.../VHIALY'} ngày ${report.header_day} tháng ${report.header_month} năm ${report.header_year} của PX Vận hành Ialy)`,
+              italics: true,
+              font: FONT_NAME,
+              size: SIZE_MAIN,
+            }),
+          ],
+        })
+      );
+
+      // Build 2 rows of 2 columns for this page
+      const pageRows: TableRow[] = [];
+      for (let r = 0; r < chunk.length; r += 2) {
+        const p1 = chunk[r];
+        const p2 = chunk[r + 1];
+        const globalIdx1 = c + r;
+        const globalIdx2 = c + r + 1;
+
+        const p1Bytes = await imageToPngBytes(p1.imageData, 320, 200);
+        const p1Status =
+          p1.status === 'passed'
+            ? 'Đạt - Đảm bảo'
+            : p1.status === 'warning'
+            ? 'Cần lưu ý'
+            : 'Không đạt';
+
+        const p1Children: Paragraph[] = [];
+        if (p1Bytes) {
+          p1Children.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 30, after: 40 },
+              children: [
+                new ImageRun({
+                  data: p1Bytes,
+                  transformation: { width: 255, height: 160 },
+                  type: 'png',
+                }),
+              ],
+            })
+          );
+        }
+        p1Children.push(
+          new Paragraph({
+            spacing: { before: 20, after: 15 },
+            children: [
+              new TextRun({
+                text: `Hình ${globalIdx1 + 1}: ${p1.title}`,
+                bold: true,
+                font: FONT_NAME,
+                size: SIZE_SUB,
+              }),
+            ],
+          }),
+          new Paragraph({
+            spacing: { before: 15, after: 15 },
+            children: [
+              new TextRun({ text: 'Vị trí: ', bold: true, font: FONT_NAME, size: SIZE_SUB }),
+              new TextRun({ text: p1.location, font: FONT_NAME, size: SIZE_SUB }),
+            ],
+          }),
+          new Paragraph({
+            spacing: { before: 15, after: 15 },
+            children: [
+              new TextRun({ text: 'Đánh giá: ', bold: true, font: FONT_NAME, size: SIZE_SUB }),
+              new TextRun({ text: p1Status, font: FONT_NAME, size: SIZE_SUB }),
+            ],
+          }),
+          new Paragraph({
+            spacing: { before: 15, after: 30 },
+            children: [
+              new TextRun({ text: 'Ghi nhận: ', italics: true, font: FONT_NAME, size: SIZE_SUB }),
+              new TextRun({ text: p1.description, font: FONT_NAME, size: SIZE_SUB }),
+            ],
+          })
+        );
+
+        const cells: TableCell[] = [
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            borders: cellAllBorders,
+            margins: tableCellPadding,
+            children: p1Children,
+          }),
+        ];
+
+        if (p2) {
+          const p2Bytes = await imageToPngBytes(p2.imageData, 320, 200);
+          const p2Status =
+            p2.status === 'passed'
+              ? 'Đạt - Đảm bảo'
+              : p2.status === 'warning'
+              ? 'Cần lưu ý'
+              : 'Không đạt';
+
+          const p2Children: Paragraph[] = [];
+          if (p2Bytes) {
+            p2Children.push(
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 30, after: 40 },
+                children: [
+                  new ImageRun({
+                    data: p2Bytes,
+                    transformation: { width: 255, height: 160 },
+                    type: 'png',
+                  }),
+                ],
+              })
+            );
+          }
+          p2Children.push(
+            new Paragraph({
+              spacing: { before: 20, after: 15 },
+              children: [
+                new TextRun({
+                  text: `Hình ${globalIdx2 + 1}: ${p2.title}`,
+                  bold: true,
+                  font: FONT_NAME,
+                  size: SIZE_SUB,
+                }),
+              ],
+            }),
+            new Paragraph({
+              spacing: { before: 15, after: 15 },
+              children: [
+                new TextRun({ text: 'Vị trí: ', bold: true, font: FONT_NAME, size: SIZE_SUB }),
+                new TextRun({ text: p2.location, font: FONT_NAME, size: SIZE_SUB }),
+              ],
+            }),
+            new Paragraph({
+              spacing: { before: 15, after: 15 },
+              children: [
+                new TextRun({ text: 'Đánh giá: ', bold: true, font: FONT_NAME, size: SIZE_SUB }),
+                new TextRun({ text: p2Status, font: FONT_NAME, size: SIZE_SUB }),
+              ],
+            }),
+            new Paragraph({
+              spacing: { before: 15, after: 30 },
+              children: [
+                new TextRun({ text: 'Ghi nhận: ', italics: true, font: FONT_NAME, size: SIZE_SUB }),
+                new TextRun({ text: p2.description, font: FONT_NAME, size: SIZE_SUB }),
+              ],
+            })
+          );
+
+          cells.push(
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              borders: cellAllBorders,
+              margins: tableCellPadding,
+              children: p2Children,
+            })
+          );
+        } else {
+          cells.push(
+            new TableCell({
+              width: { size: 50, type: WidthType.PERCENTAGE },
+              borders: cellAllBorders,
+              margins: tableCellPadding,
+              children: [new Paragraph({ children: [] })],
+            })
+          );
+        }
+
+        pageRows.push(new TableRow({ cantSplit: true, children: cells }));
+      }
+
+      photoAppendixElements.push(
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          borders: cellAllBorders,
+          rows: pageRows,
+        })
+      );
+    }
+
+    if (report.attachedPdfs && report.attachedPdfs.length > 0) {
+      photoAppendixElements.push(
+        new Paragraph({
+          spacing: { before: 100, after: 50 },
+          children: [
+            new TextRun({
+              text: 'Hồ sơ, sổ theo dõi kèm theo: ',
+              bold: true,
+              font: FONT_NAME,
+              size: SIZE_MAIN,
+            }),
+            new TextRun({
+              text: report.attachedPdfs.map((pdf) => pdf.name).join('; ') + '.',
+              italics: true,
+              font: FONT_NAME,
+              size: SIZE_MAIN,
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  // --- PHỤ LỤC II: CHÈN CÁC FILE PDF ĐÍNH KÈM VÀO PHÂN ĐOẠN NẰM NGANG (.DOCX LANDSCAPE) ---
+  const pdfAppendixElements: (Paragraph | Table)[] = [];
+
+  if (report.attachedPdfs && report.attachedPdfs.length > 0) {
+    const pdfsToInsert = report.attachedPdfs.filter((p) => p.includedInExport !== false);
+
+    for (let pdfIndex = 0; pdfIndex < pdfsToInsert.length; pdfIndex++) {
+      const pdfItem = pdfsToInsert[pdfIndex];
+      let pageImages = pdfItem.pageImages || [];
+      // If pageImages not yet generated, render them now
+      if (pageImages.length === 0 && pdfItem.pdfData) {
+        try {
+          pageImages = await renderPdfPagesToDataUrls(pdfItem.pdfData, 20, 1.3);
+        } catch (err) {
+          console.error(`Lỗi render trang PDF cho Word: ${pdfItem.name}`, err);
+        }
+      }
+
+      if (pageImages && pageImages.length > 0) {
+        for (let pageIdx = 0; pageIdx < pageImages.length; pageIdx++) {
+          const pageImg = pageImages[pageIdx];
+          const imgInfo = await getImageDimensionsAndBytes(pageImg);
+
+          if (imgInfo && imgInfo.bytes) {
+            // A4 Landscape available area: width ~750 px, height ~465 px
+            const maxWidth = 750;
+            const maxHeight = 465;
+            const srcRatio = imgInfo.aspectRatio || 1.414;
+
+            let targetW: number;
+            let targetH: number;
+
+            if (srcRatio >= 1.0) {
+              if (maxWidth / srcRatio <= maxHeight) {
+                targetW = maxWidth;
+                targetH = Math.round(maxWidth / srcRatio);
+              } else {
+                targetH = maxHeight;
+                targetW = Math.round(maxHeight * srcRatio);
+              }
+            } else {
+              targetH = maxHeight;
+              targetW = Math.round(maxHeight * srcRatio);
+            }
+
+            const isFirstElement = pdfIndex === 0 && pageIdx === 0;
+
+            pdfAppendixElements.push(
+              new Paragraph({
+                pageBreakBefore: !isFirstElement,
+                alignment: AlignmentType.CENTER,
+                spacing: { before: isFirstElement ? 40 : 60, after: 20 },
+                children: [
+                  new TextRun({
+                    text: 'PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM',
+                    bold: true,
+                    font: FONT_NAME,
+                    size: SIZE_TITLE,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 10, after: 40 },
+                children: [
+                  new TextRun({
+                    text: pdfItem.name,
+                    bold: true,
+                    font: FONT_NAME,
+                    size: SIZE_MAIN,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 10, after: 30 },
+                children: [
+                  new ImageRun({
+                    data: imgInfo.bytes,
+                    transformation: { width: targetW, height: targetH },
+                    type: 'png',
+                  }),
+                ],
+              })
+            );
+          }
+        }
+      } else {
+        const isFirstElement = pdfIndex === 0;
+        pdfAppendixElements.push(
+          new Paragraph({
+            pageBreakBefore: !isFirstElement,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: isFirstElement ? 60 : 100, after: 30 },
+            children: [
+              new TextRun({
+                text: 'PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM',
+                bold: true,
+                font: FONT_NAME,
+                size: SIZE_TITLE,
+              }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 20, after: 60 },
+            children: [
+              new TextRun({
+                text: pdfItem.name,
+                bold: true,
+                font: FONT_NAME,
+                size: SIZE_MAIN,
+              }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 20, after: 100 },
+            children: [
+              new TextRun({
+                text: '(Tài liệu định dạng PDF được lưu kèm theo Biên bản kiểm tra PCCC)',
+                italics: true,
+                font: FONT_NAME,
+                size: SIZE_MAIN,
+              }),
+            ],
+          })
+        );
+      }
+    }
+  }
+
+  // Build sections
+  const sections: any[] = [
+    {
+      properties: {
+        page: {
+          margin: {
+            top: MARGIN_TOP, // 2.0 cm (1134 dxa)
+            bottom: MARGIN_BOTTOM, // 2.0 cm (1134 dxa)
+            left: MARGIN_LEFT, // 3.0 cm (1701 dxa)
+            right: MARGIN_RIGHT, // 2.0 cm (1134 dxa)
           },
         },
       },
-    },
-    sections: [
-      {
-        properties: {
-          page: {
-            margin: {
-              top: MARGIN_TOP, // 2.0 cm (1134 dxa)
-              bottom: MARGIN_BOTTOM, // 2.0 cm (1134 dxa)
-              left: MARGIN_LEFT, // 3.0 cm (1701 dxa)
-              right: MARGIN_RIGHT, // 2.0 cm (1134 dxa)
-            },
-          },
-        },
-        children: [
+      children: [
           new Paragraph({
             alignment: AlignmentType.RIGHT,
             children: [new TextRun({ text: 'Mẫu số PC02', italics: true, font: FONT_NAME, size: SIZE_SUB })],
@@ -937,10 +1293,45 @@ export async function exportReportToDocx(report: ReportData) {
             children: [new TextRun({ text: 'Các thành viên kiểm tra:', bold: true, font: FONT_NAME, size: SIZE_MAIN })],
           }),
           fullSignTable,
+          ...photoAppendixElements,
         ],
       },
-    ],
-  });
+    ];
+
+    if (pdfAppendixElements.length > 0) {
+      sections.push({
+        properties: {
+          page: {
+            size: {
+              orientation: PageOrientation.LANDSCAPE,
+              width: 16838, // A4 Landscape width (29.7 cm)
+              height: 11906, // A4 Landscape height (21.0 cm)
+            },
+            margin: {
+              top: 720,    // ~1.27 cm (0.5 in)
+              bottom: 720, // ~1.27 cm (0.5 in)
+              left: 850,   // ~1.5 cm
+              right: 850,  // ~1.5 cm
+            },
+          },
+        },
+        children: pdfAppendixElements,
+      });
+    }
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: FONT_NAME,
+              size: SIZE_MAIN,
+            },
+          },
+        },
+      },
+      sections,
+    });
 
   const blob = await Packer.toBlob(doc);
   const safeMonth = (report.report_month || 'T_').replace(/[^0-9A-Za-z_-]/g, '_');

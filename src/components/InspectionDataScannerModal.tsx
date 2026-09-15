@@ -58,7 +58,6 @@ export const InspectionDataScannerModal: React.FC<InspectionDataScannerModalProp
   const [updateBadColumns, setUpdateBadColumns] = useState(true);
   const [updateNotes, setUpdateNotes] = useState(true);
   const [addRecommendations, setAddRecommendations] = useState(true);
-  const [addPersonnelToDelegation, setAddPersonnelToDelegation] = useState(true);
 
   const [appliedSuccess, setAppliedSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -187,7 +186,7 @@ export const InspectionDataScannerModal: React.FC<InspectionDataScannerModalProp
         updateBadColumns,
         updateNotes,
         addRecommendations,
-        addPersonnelToDelegation,
+        addPersonnelToDelegation: false,
         targetPlantScope,
       }
     );
@@ -781,16 +780,6 @@ export const InspectionDataScannerModal: React.FC<InspectionDataScannerModalProp
                         className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
                       />
                       <span>Tự động bổ sung vào <strong>Mục II. Kiến nghị</strong></span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-800 font-medium">
-                      <input
-                        type="checkbox"
-                        checked={addPersonnelToDelegation}
-                        onChange={(e) => setAddPersonnelToDelegation(e.target.checked)}
-                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
-                      />
-                      <span>Bổ sung cán bộ kiểm tra vào <strong>Danh sách đoàn</strong></span>
                     </label>
                   </div>
                 </div>

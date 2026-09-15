@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "pccc-ialy",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -23,6 +23,8 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3",

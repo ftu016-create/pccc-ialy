@@ -36,4 +36,9 @@
     page-break-inside: avoid;
     page-break-after: auto;
   }
+
+  .pdf-attached-page-preview {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
 }

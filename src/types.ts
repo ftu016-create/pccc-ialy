@@ -36,6 +36,32 @@ export interface EscapeItem {
   note: string;
 }
 
+export interface InspectionPhoto {
+  id: string;
+  title: string;
+  category: 'parking' | 'escape_route' | 'equipment' | 'other';
+  plant: 'ialy' | 'ialy_mr' | 'pk' | 'trạm_500kv' | 'other';
+  location: string;
+  description: string;
+  capturedAt?: string;
+  status: 'passed' | 'warning' | 'failed';
+  imageData: string;
+  filename?: string;
+}
+
+export interface AttachedDocument {
+  id: string;
+  name: string;
+  type: 'pdf' | 'docx' | 'image';
+  sizeBytes?: number;
+  pdfData?: string; // base64 string
+  pageCount?: number;
+  pageImages?: string[]; // Rendered PNG data URLs for each PDF page
+  uploadedAt: string;
+  note?: string;
+  includedInExport?: boolean;
+}
+
 export interface ReportData {
   id: string;
   // Số hiệu & địa danh
@@ -74,6 +100,10 @@ export interface ReportData {
   
   // 6. Kiến nghị
   recommendations: string[];
+  
+  // 7. Phụ lục hình ảnh hiện trường & Tài liệu đính kèm
+  photos?: InspectionPhoto[];
+  attachedPdfs?: AttachedDocument[];
   
   // Kết thúc & người ký
   end_h: string;

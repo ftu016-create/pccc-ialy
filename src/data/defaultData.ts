@@ -1,4 +1,5 @@
 import { Person, EquipItem, FireSafetyItem, EscapeItem, ReportData } from '../types';
+import { DEFAULT_IALY_SAMPLE_PHOTOS } from '../utils/photoUtils';
 
 export const DEFAULT_STAFF_DIRECTORY: { name: string; role: string }[] = [
   { name: 'Nguyễn Hoàng Phi', role: 'Phó Quản đốc' },
@@ -119,6 +120,9 @@ export function createNewReport(override?: Partial<ReportData>): ReportData {
     recommendations: [
       'Tiếp tục duy trì chế độ tự kiểm tra định kỳ; tăng cường kiểm tra trong các đợt sửa chữa, các công việc có sử dụng nguồn lửa, nguồn nhiệt; bảo đảm các phương tiện, hệ thống PCCC luôn ở trạng thái sẵn sàng hoạt động; thường xuyên tuyên truyền, huấn luyện và diễn tập PCCC&CNCH theo kế hoạch.'
     ],
+
+    photos: [],
+    attachedPdfs: [],
 
     end_h: '15',
     end_p: '30',

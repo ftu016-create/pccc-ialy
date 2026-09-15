@@ -18,6 +18,7 @@ import { ReportData, Person, EquipItem, FireSafetyItem, EscapeItem, UserRole } f
 import { DEFAULT_STAFF_DIRECTORY } from '../data/defaultData';
 import { getSignatureForPerson } from '../data/sampleSignatures';
 import { SignatureModal } from './SignatureModal';
+import { PhotoAnnexManager } from './PhotoAnnexManager';
 import { Lock } from 'lucide-react';
 
 interface ReportFormProps {
@@ -1079,6 +1080,9 @@ export const ReportForm: React.FC<ReportFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* --- MỤC III. PHỤ LỤC HÌNH ẢNH HIỆN TRƯỜNG & HỒ SƠ ĐÍNH KÈM --- */}
+      <PhotoAnnexManager report={data} onChange={onChange} />
 
       {/* Signature Modal */}
       {signingPerson && (
