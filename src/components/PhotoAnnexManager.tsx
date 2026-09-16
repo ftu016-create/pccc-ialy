@@ -128,7 +128,7 @@ export const PhotoAnnexManager: React.FC<PhotoAnnexManagerProps> = ({
           // Pre-render page images synchronously for Word and print preview insertion
           let pageImages: string[] = [];
           try {
-            pageImages = await renderPdfPagesToDataUrls(dataUrl, 20, 1.3);
+            pageImages = await renderPdfPagesToDataUrls(dataUrl, 20, 1.8);
             if (pageImages && pageImages.length > 0) {
               pageCount = pageImages.length;
             }

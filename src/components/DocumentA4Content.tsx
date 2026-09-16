@@ -193,18 +193,20 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
           </tr>
         </thead>
         <tbody>
-          {report.fire.map((f) => (
-            <tr key={f.id}>
-              <td className="border border-black px-1 py-1 text-center align-top">{f.stt}</td>
-              <td className="border border-black px-2 py-1 align-top">{f.name}</td>
-              <td className="border border-black px-2 py-1 align-top whitespace-pre-line italic">
-                {f.qty}
-              </td>
-              <td className="border border-black px-1 py-1 text-center align-top italic">{f.ok}</td>
-              <td className="border border-black px-1 py-1 text-center align-top italic">{f.bad}</td>
-              <td className="border border-black px-1.5 py-1 align-top">{f.note}</td>
-            </tr>
-          ))}
+          {report.fire
+            .filter((f) => f.stt !== '3' && !(f.id === 'f-3' && !f.name?.trim()))
+            .map((f) => (
+              <tr key={f.id}>
+                <td className="border border-black px-1 py-1 text-center align-top">{f.stt}</td>
+                <td className="border border-black px-2 py-1 align-top">{f.name}</td>
+                <td className="border border-black px-2 py-1 align-top whitespace-pre-line italic">
+                  {f.qty}
+                </td>
+                <td className="border border-black px-1 py-1 text-center align-top italic">{f.ok}</td>
+                <td className="border border-black px-1 py-1 text-center align-top italic">{f.bad}</td>
+                <td className="border border-black px-1.5 py-1 align-top">{f.note}</td>
+              </tr>
+            ))}
         </tbody>
       </table>
 
@@ -224,14 +226,19 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
           </tr>
         </thead>
         <tbody>
-          {report.escape.map((esc) => (
-            <tr key={esc.id}>
-              <td className="border border-black px-1 py-1 text-center">{esc.stt}</td>
-              <td className="border border-black px-2 py-1">{esc.name}</td>
-              <td className="border border-black px-1 py-1 text-center italic">{esc.status}</td>
-              <td className="border border-black px-2 py-1 text-[10.5pt]">{esc.note}</td>
-            </tr>
-          ))}
+          {report.escape
+            .filter((esc) => esc.stt !== '2.1' && esc.name?.trim() !== 'pháp ngăn')
+            .map((esc) => {
+              const cleanNote = esc.note?.includes('Hình ảnh minh chứng được lưu tại thư mục') ? '' : esc.note;
+              return (
+                <tr key={esc.id}>
+                  <td className="border border-black px-1 py-1 text-center">{esc.stt}</td>
+                  <td className="border border-black px-2 py-1">{esc.name}</td>
+                  <td className="border border-black px-1 py-1 text-center italic">{esc.status}</td>
+                  <td className="border border-black px-2 py-1 text-[10.5pt]">{cleanNote}</td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
 

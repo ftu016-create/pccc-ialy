@@ -7,6 +7,55 @@ const STAFF_KEY = 'pccc_ialy_staff_directory_v1';
 // In-memory cache to ensure full PDF and image binary data is never lost during session
 const memoryReportsCache: Map<string, ReportData> = new Map();
 
+function sanitizeReport(report: ReportData): ReportData {
+  const r = { ...report };
+
+  // 1. Remove unwanted row in escape: stt 2.1 or 'pháp ngăn' and clear old note text
+  if (Array.isArray(r.escape)) {
+    r.escape = r.escape
+      .filter((esc) => esc.stt !== '2.1' && esc.name?.trim() !== 'pháp ngăn')
+      .map((esc) => {
+        if (esc.note && esc.note.includes('Hình ảnh minh chứng được lưu tại thư mục')) {
+          return { ...esc, note: '' };
+        }
+        return esc;
+      });
+  }
+
+  // 2. Remove unwanted row in fire: stt 3 or empty 3rd row
+  if (Array.isArray(r.fire)) {
+    r.fire = r.fire.filter((f) => {
+      if (f.stt === '3') return false;
+      if (f.id === 'f-3' && !f.name?.trim()) return false;
+      return true;
+    });
+  }
+
+  // 3. Clean up any other notes containing 'Hình ảnh minh chứng...'
+  if (Array.isArray(r.equip)) {
+    r.equip = r.equip.map((eq) => {
+      if (eq.note && eq.note.includes('Hình ảnh minh chứng được lưu tại thư mục')) {
+        return { ...eq, note: '' };
+      }
+      return eq;
+    });
+  }
+
+  if (r.inspection_areas && (r.inspection_areas.includes('Cửa Nhận Nước') || r.inspection_areas.includes('Cửa Nhận nước'))) {
+    r.inspection_areas = r.inspection_areas
+      .replace(
+        '- NMTĐ Ialy: Gian máy; Gian biến áp; Nhà PK; Trạm 500 kV Ialy; Cửa Nhận Nước.',
+        '- NMTĐ Ialy: Gian máy, Gian biến áp, Nhà PK, Trạm 500 kV, Cửa nhận nước.'
+      )
+      .replace(
+        '- NMTĐ Ialy: Gian máy; Gian biến áp; Nhà PK; Trạm 500 kV Ialy; Cửa Nhận nước.',
+        '- NMTĐ Ialy: Gian máy, Gian biến áp, Nhà PK, Trạm 500 kV, Cửa nhận nước.'
+      );
+  }
+
+  return r;
+}
+
 export const storageService = {
   getAllReports(): ReportData[] {
     try {
@@ -14,7 +63,7 @@ export const storageService = {
       let parsed: ReportData[] = [];
       if (!data) {
         // Seed with initial report from PDF
-        const initial = createNewReport();
+        const initial = sanitizeReport(createNewReport());
         this.saveReport(initial);
         return [initial];
       }
@@ -24,28 +73,14 @@ export const storageService = {
       return parsed.map((r) => {
         const cached = memoryReportsCache.get(r.id);
         const merged = cached ? { ...r, ...cached } : r;
-        if (merged.inspection_areas && (merged.inspection_areas.includes('Cửa Nhận Nước') || merged.inspection_areas.includes('Cửa Nhận nước'))) {
-          return {
-            ...merged,
-            inspection_areas: merged.inspection_areas
-              .replace(
-                '- NMTĐ Ialy: Gian máy; Gian biến áp; Nhà PK; Trạm 500 kV Ialy; Cửa Nhận Nước.',
-                '- NMTĐ Ialy: Gian máy, Gian biến áp, Nhà PK, Trạm 500 kV, Cửa nhận nước.'
-              )
-              .replace(
-                '- NMTĐ Ialy: Gian máy; Gian biến áp; Nhà PK; Trạm 500 kV Ialy; Cửa Nhận nước.',
-                '- NMTĐ Ialy: Gian máy, Gian biến áp, Nhà PK, Trạm 500 kV, Cửa nhận nước.'
-              ),
-          };
-        }
-        return merged;
+        return sanitizeReport(merged);
       });
     } catch (e) {
       console.error('Failed to load reports from localStorage', e);
       if (memoryReportsCache.size > 0) {
-        return Array.from(memoryReportsCache.values());
+        return Array.from(memoryReportsCache.values()).map(sanitizeReport);
       }
-      return [createNewReport()];
+      return [sanitizeReport(createNewReport())];
     }
   },
 
@@ -58,16 +93,18 @@ export const storageService = {
   },
 
   saveReport(report: ReportData): void {
+    const sanitized = sanitizeReport(report);
+
     // 1. Update in-memory cache with full fidelity
-    memoryReportsCache.set(report.id, report);
+    memoryReportsCache.set(sanitized.id, sanitized);
 
     // 2. Persist to localStorage safely with quota fallback
     try {
       const all = this.getAllReports();
-      const existingIndex = all.findIndex((r) => r.id === report.id);
+      const existingIndex = all.findIndex((r) => r.id === sanitized.id);
       const now = new Date().toISOString();
       const updated = {
-        ...report,
+        ...sanitized,
         updated_at: now,
       };
 

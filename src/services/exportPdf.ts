@@ -98,14 +98,99 @@ export async function exportElementToPdf(
         }
 
         const donorDoc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-        const pageIndices = donorDoc.getPageIndices();
-        if (pageIndices && pageIndices.length > 0) {
-          const copiedPages = await mergedDoc.copyPages(donorDoc, pageIndices);
-          copiedPages.forEach((page) => mergedDoc.addPage(page));
+        const pageCount = donorDoc.getPageCount();
+        if (pageCount > 0) {
+          const A4_LANDSCAPE: [number, number] = [841.89, 595.28];
+
+          for (let pIndex = 0; pIndex < pageCount; pIndex++) {
+            const donorPage = donorDoc.getPage(pIndex);
+            const { width, height } = donorPage.getSize();
+            const rotation = donorPage.getRotation().angle;
+
+            // Check if visually landscape (taking rotation into account)
+            const isVisuallyLandscape =
+              rotation === 90 || rotation === 270 ? width < height : width >= height;
+
+            if (isVisuallyLandscape) {
+              // Already landscape: copy directly preserving vector fidelity
+              const [copiedPage] = await mergedDoc.copyPages(donorDoc, [pIndex]);
+              mergedDoc.addPage(copiedPage);
+            } else {
+              // If source page is portrait (e.g. vertical scan of wide logbook):
+              // Embed onto an A4 Landscape page (297mm x 210mm) centered and scaled
+              // to ensure uniform landscape presentation for management submission
+              try {
+                const [embeddedPage] = await mergedDoc.embedPages([donorPage]);
+                const newPage = mergedDoc.addPage(A4_LANDSCAPE);
+
+                const marginX = 40;
+                const marginY = 30;
+                const maxWidth = 841.89 - marginX * 2;
+                const maxHeight = 595.28 - marginY * 2;
+
+                const scale = Math.min(maxWidth / width, maxHeight / height);
+                const targetW = width * scale;
+                const targetH = height * scale;
+
+                const x = (841.89 - targetW) / 2;
+                const y = (595.28 - targetH) / 2;
+
+                newPage.drawPage(embeddedPage, {
+                  x,
+                  y,
+                  width: targetW,
+                  height: targetH,
+                });
+              } catch {
+                // Fallback: copy directly if embedPages cannot process contents
+                const [copiedPage] = await mergedDoc.copyPages(donorDoc, [pIndex]);
+                mergedDoc.addPage(copiedPage);
+              }
+            }
+          }
           anyMerged = true;
         }
       } catch (err) {
         console.error(`Không thể ghép trang từ file đính kèm: ${att.name}`, err);
+
+        // Fallback: embed rendered pageImages if present on A4 Landscape
+        if (att.pageImages && att.pageImages.length > 0) {
+          const A4_LANDSCAPE: [number, number] = [841.89, 595.28];
+          for (const pageImg of att.pageImages) {
+            try {
+              const isPng = pageImg.startsWith('data:image/png');
+              const base64Part = pageImg.includes(',') ? pageImg.split(',')[1] : pageImg;
+              const binary = atob(base64Part.replace(/[\s\r\n]+/g, ''));
+              const imgBytes = new Uint8Array(binary.length);
+              for (let i = 0; i < binary.length; i++) {
+                imgBytes[i] = binary.charCodeAt(i);
+              }
+
+              const image = isPng ? await mergedDoc.embedPng(imgBytes) : await mergedDoc.embedJpg(imgBytes);
+              const newPage = mergedDoc.addPage(A4_LANDSCAPE);
+
+              const imgDims = image.scale(1);
+              const maxWidth = 841.89 - 80;
+              const maxHeight = 595.28 - 60;
+              const scale = Math.min(maxWidth / imgDims.width, maxHeight / imgDims.height);
+              const targetW = imgDims.width * scale;
+              const targetH = imgDims.height * scale;
+
+              const x = (841.89 - targetW) / 2;
+              const y = (595.28 - targetH) / 2;
+
+              newPage.drawImage(image, {
+                x,
+                y,
+                width: targetW,
+                height: targetH,
+              });
+              anyMerged = true;
+            } catch (imgErr) {
+              console.error('Lỗi khi fallback embed page image:', imgErr);
+            }
+          }
+        }
       }
     }
 

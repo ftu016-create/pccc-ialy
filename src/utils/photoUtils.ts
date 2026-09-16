@@ -611,7 +611,8 @@ export interface ImageDimensionResult {
 }
 
 export async function getImageDimensionsAndBytes(
-  dataUrl: string
+  dataUrl: string,
+  trimWhiteMargins = false
 ): Promise<ImageDimensionResult | null> {
   if (!dataUrl || typeof dataUrl !== 'string') return null;
 
@@ -626,8 +627,8 @@ export async function getImageDimensionsAndBytes(
           const naturalHeight = img.naturalHeight || 990;
           const aspectRatio = naturalWidth / naturalHeight;
 
-          // If already PNG data URL, parse base64 directly for maximum fidelity
-          if (dataUrl.startsWith('data:image/png;base64,')) {
+          // If already PNG data URL and no trimming requested, parse base64 directly
+          if (!trimWhiteMargins && dataUrl.startsWith('data:image/png;base64,')) {
             const base64 = dataUrl.split(',')[1];
             let clean = base64.replace(/[\s\r\n]+/g, '');
             while (clean.length % 4 !== 0) clean += '=';
@@ -638,7 +639,7 @@ export async function getImageDimensionsAndBytes(
             return;
           }
 
-          // Otherwise draw to canvas to convert to PNG
+          // Draw to canvas to convert to PNG or trim white margins
           const canvas = document.createElement('canvas');
           canvas.width = naturalWidth;
           canvas.height = naturalHeight;
@@ -651,12 +652,72 @@ export async function getImageDimensionsAndBytes(
           ctx.fillRect(0, 0, naturalWidth, naturalHeight);
           ctx.drawImage(img, 0, 0);
 
-          const pngUrl = canvas.toDataURL('image/png');
+          let finalCanvas = canvas;
+
+          if (trimWhiteMargins && naturalWidth > 50 && naturalHeight > 50) {
+            try {
+              const imgData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+              const data = imgData.data;
+              let minX = naturalWidth, minY = naturalHeight, maxX = 0, maxY = 0;
+              let found = false;
+
+              // Step 2 for speed
+              for (let y = 0; y < naturalHeight; y += 2) {
+                for (let x = 0; x < naturalWidth; x += 2) {
+                  const idx = (y * naturalWidth + x) * 4;
+                  const r = data[idx];
+                  const g = data[idx + 1];
+                  const b = data[idx + 2];
+                  const a = data[idx + 3];
+
+                  if (a > 30 && (r < 248 || g < 248 || b < 248)) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                    found = true;
+                  }
+                }
+              }
+
+              if (found) {
+                const padding = 14;
+                minX = Math.max(0, minX - padding);
+                minY = Math.max(0, minY - padding);
+                maxX = Math.min(naturalWidth - 1, maxX + padding);
+                maxY = Math.min(naturalHeight - 1, maxY + padding);
+
+                const cropW = maxX - minX + 1;
+                const cropH = maxY - minY + 1;
+
+                if (naturalWidth - cropW > 24 || naturalHeight - cropH > 24) {
+                  const cropped = document.createElement('canvas');
+                  cropped.width = cropW;
+                  cropped.height = cropH;
+                  const cCtx = cropped.getContext('2d');
+                  if (cCtx) {
+                    cCtx.fillStyle = '#ffffff';
+                    cCtx.fillRect(0, 0, cropW, cropH);
+                    cCtx.drawImage(canvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
+                    finalCanvas = cropped;
+                  }
+                }
+              }
+            } catch {
+              // fallback to untrimmed canvas
+            }
+          }
+
+          const outW = finalCanvas.width;
+          const outH = finalCanvas.height;
+          const outRatio = outW / outH;
+
+          const pngUrl = finalCanvas.toDataURL('image/png');
           const base64 = pngUrl.split(',')[1];
           const binary = atob(base64);
           const bytes = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          resolve({ bytes, naturalWidth, naturalHeight, aspectRatio });
+          resolve({ bytes, naturalWidth: outW, naturalHeight: outH, aspectRatio: outRatio });
         } catch {
           resolve(null);
         }

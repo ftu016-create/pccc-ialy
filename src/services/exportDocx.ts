@@ -86,7 +86,25 @@ const cellNoBorders: ITableCellBorders = {
   right: borderNone,
 };
 
-export async function exportReportToDocx(report: ReportData) {
+export async function exportReportToDocx(rawReport: ReportData) {
+  // Sanitize report: filter out unwanted extra rows and obsolete note text
+  const report = {
+    ...rawReport,
+    escape: (rawReport.escape || [])
+      .filter((esc) => esc.stt !== '2.1' && esc.name?.trim() !== 'pháp ngăn')
+      .map((esc) => {
+        if (esc.note && esc.note.includes('Hình ảnh minh chứng được lưu tại thư mục')) {
+          return { ...esc, note: '' };
+        }
+        return esc;
+      }),
+    fire: (rawReport.fire || []).filter((f) => {
+      if (f.stt === '3') return false;
+      if (f.id === 'f-3' && !f.name?.trim()) return false;
+      return true;
+    }),
+  };
+
   // Build header table
   const headerTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -1012,7 +1030,7 @@ export async function exportReportToDocx(report: ReportData) {
       // If pageImages not yet generated, render them now
       if (pageImages.length === 0 && pdfItem.pdfData) {
         try {
-          pageImages = await renderPdfPagesToDataUrls(pdfItem.pdfData, 20, 1.3);
+          pageImages = await renderPdfPagesToDataUrls(pdfItem.pdfData, 20, 1.8);
         } catch (err) {
           console.error(`Lỗi render trang PDF cho Word: ${pdfItem.name}`, err);
         }
@@ -1021,28 +1039,41 @@ export async function exportReportToDocx(report: ReportData) {
       if (pageImages && pageImages.length > 0) {
         for (let pageIdx = 0; pageIdx < pageImages.length; pageIdx++) {
           const pageImg = pageImages[pageIdx];
-          const imgInfo = await getImageDimensionsAndBytes(pageImg);
+          // Pass trimWhiteMargins = true to strip dead empty margins from scans/Excel PDF prints
+          const imgInfo = await getImageDimensionsAndBytes(pageImg, true);
 
           if (imgInfo && imgInfo.bytes) {
-            // A4 Landscape available area: width ~750 px, height ~465 px
-            const maxWidth = 750;
-            const maxHeight = 465;
+            // A4 Landscape available printable area in Word:
+            // Page width: 29.7cm = 1122px (96 DPI). Margins 1.0cm * 2 -> Printable width ~1046px
+            // Page height: 21.0cm = 794px. Margins 1.0cm * 2 -> Printable height ~718px
+            // Compact header (title + filename) -> ~45px
+            // Remaining available image height -> ~640px
+            const maxWidth = 1000;
+            const maxHeight = 620;
             const srcRatio = imgInfo.aspectRatio || 1.414;
 
             let targetW: number;
             let targetH: number;
 
-            if (srcRatio >= 1.0) {
-              if (maxWidth / srcRatio <= maxHeight) {
-                targetW = maxWidth;
-                targetH = Math.round(maxWidth / srcRatio);
-              } else {
-                targetH = maxHeight;
-                targetW = Math.round(maxHeight * srcRatio);
-              }
+            if (srcRatio >= maxWidth / maxHeight) {
+              // Very wide landscape: fit width to maxWidth (1000px), height scales proportionally
+              targetW = maxWidth;
+              targetH = Math.round(maxWidth / srcRatio);
             } else {
+              // Scale height up to available height, width scales proportionally
               targetH = maxHeight;
-              targetW = Math.round(maxHeight * srcRatio);
+              targetW = Math.min(maxWidth, Math.round(maxHeight * srcRatio));
+            }
+
+            // Ensure tabular / landscape content (srcRatio >= 1.05) spans generously across the page
+            // (at least 880px / 23.3 cm) if height allows, so it fits the A4 landscape sheet properly
+            if (srcRatio >= 1.05 && targetW < 900) {
+              const desiredW = Math.min(maxWidth, 920);
+              const desiredH = Math.round(desiredW / srcRatio);
+              if (desiredH <= maxHeight + 10) {
+                targetW = desiredW;
+                targetH = Math.min(maxHeight, desiredH);
+              }
             }
 
             const isFirstElement = pdfIndex === 0 && pageIdx === 0;
@@ -1051,7 +1082,7 @@ export async function exportReportToDocx(report: ReportData) {
               new Paragraph({
                 pageBreakBefore: !isFirstElement,
                 alignment: AlignmentType.CENTER,
-                spacing: { before: isFirstElement ? 40 : 60, after: 20 },
+                spacing: { before: isFirstElement ? 0 : 30, after: 10 },
                 children: [
                   new TextRun({
                     text: 'PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM',
@@ -1063,11 +1094,12 @@ export async function exportReportToDocx(report: ReportData) {
               }),
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 10, after: 40 },
+                spacing: { before: 0, after: 20 },
                 children: [
                   new TextRun({
-                    text: pdfItem.name,
+                    text: `${pdfItem.name}${pdfItem.pageCount && pdfItem.pageCount > 1 ? ` (Trang ${pageIdx + 1}/${pdfItem.pageCount})` : ''}`,
                     bold: true,
+                    italics: true,
                     font: FONT_NAME,
                     size: SIZE_MAIN,
                   }),
@@ -1075,7 +1107,7 @@ export async function exportReportToDocx(report: ReportData) {
               }),
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                spacing: { before: 10, after: 30 },
+                spacing: { before: 0, after: 0 },
                 children: [
                   new ImageRun({
                     data: imgInfo.bytes,
@@ -1304,14 +1336,14 @@ export async function exportReportToDocx(report: ReportData) {
           page: {
             size: {
               orientation: PageOrientation.LANDSCAPE,
-              width: 16838, // A4 Landscape width (29.7 cm)
-              height: 11906, // A4 Landscape height (21.0 cm)
+              width: 11906, // In docx library, passing width: 11906, height: 16838 with orientation: LANDSCAPE produces w:w="16838" w:h="11906" in Word!
+              height: 16838,
             },
             margin: {
-              top: 720,    // ~1.27 cm (0.5 in)
-              bottom: 720, // ~1.27 cm (0.5 in)
-              left: 850,   // ~1.5 cm
-              right: 850,  // ~1.5 cm
+              top: 567,    // ~1.0 cm
+              bottom: 567, // ~1.0 cm
+              left: 567,   // ~1.0 cm
+              right: 567,  // ~1.0 cm
             },
           },
         },
