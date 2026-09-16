@@ -121,7 +121,7 @@ export function createNewReport(override?: Partial<ReportData>): ReportData {
       'Tiếp tục duy trì chế độ tự kiểm tra định kỳ; tăng cường kiểm tra trong các đợt sửa chữa, các công việc có sử dụng nguồn lửa, nguồn nhiệt; bảo đảm các phương tiện, hệ thống PCCC luôn ở trạng thái sẵn sàng hoạt động; thường xuyên tuyên truyền, huấn luyện và diễn tập PCCC&CNCH theo kế hoạch.'
     ],
 
-    photos: JSON.parse(JSON.stringify(DEFAULT_IALY_SAMPLE_PHOTOS)),
+    photos: [],
     attachedPdfs: [],
 
     end_h: '15',
