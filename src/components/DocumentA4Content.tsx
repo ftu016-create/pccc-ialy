@@ -1,7 +1,89 @@
 import React from 'react';
-import { ReportData, InspectionPhoto } from '../types';
+import { ReportData, InspectionPhoto, AttachedDocument } from '../types';
 import { getSignatureForPerson } from '../data/sampleSignatures';
 import { getReportMonthDisplay } from '../utils/photoUtils';
+import { renderPdfPagesToDataUrls } from '../utils/pdfRenderUtils';
+
+const PdfDocumentRenderer: React.FC<{ pdf: AttachedDocument; so: string }> = ({ pdf, so }) => {
+  const [images, setImages] = React.useState<string[]>(() => pdf.pageImages || []);
+  const [loading, setLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if ((!images || images.length === 0) && pdf.pdfData) {
+      let isMounted = true;
+      setLoading(true);
+      renderPdfPagesToDataUrls(pdf.pdfData, 20, 1.8)
+        .then((rendered) => {
+          if (isMounted && rendered.length > 0) {
+            setImages(rendered);
+            pdf.pageImages = rendered;
+          }
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [pdf, images]);
+
+  if (images && images.length > 0) {
+    return (
+      <>
+        {images.map((pageImg, pageIdx) => (
+          <div
+            key={`pdf-page-${pdf.id}-${pageIdx}`}
+            className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page flex flex-col justify-between"
+          >
+            <div>
+              <div className="text-center mb-3">
+                <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800">
+                  PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
+                </h3>
+                <p className="font-semibold text-[11pt] text-blue-900 mt-0.5">
+                  {pdf.name} {images.length > 1 ? `(Trang ${pageIdx + 1}/${images.length})` : ''}
+                </p>
+                <p className="italic text-[10pt] text-slate-600">
+                  (Kèm theo Biên bản tự kiểm tra PCCC số: {so || '.../VHIALY'})
+                </p>
+              </div>
+              <div className="flex justify-center items-center bg-slate-50 p-2 sm:p-4 border border-slate-300 rounded shadow-xs overflow-hidden">
+                <img
+                  src={pageImg}
+                  alt={`${pdf.name} trang ${pageIdx + 1}`}
+                  className="w-full h-auto max-h-[620px] object-contain rounded-xs"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 text-center py-8">
+        <div className="text-sm font-bold text-slate-700 animate-pulse">
+          Đang tải các trang tài liệu PDF: {pdf.name}...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 text-center py-6 bg-slate-50 rounded border border-slate-200">
+      <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800 mb-1">
+        PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
+      </h3>
+      <p className="font-bold text-[11pt] text-blue-900">{pdf.name}</p>
+      <p className="italic text-[10pt] text-slate-600 mt-1">
+        (Tài liệu định dạng PDF được lưu kèm theo Biên bản kiểm tra số: {so || '.../VHIALY'})
+      </p>
+    </div>
+  );
+};
 
 interface DocumentA4ContentProps {
   report: ReportData;
@@ -447,36 +529,13 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
             {report.attachedPdfs &&
               report.attachedPdfs
                 .filter((pdf) => pdf.includedInExport !== false)
-                .map((pdf) => {
-                  if (!pdf.pageImages || pdf.pageImages.length === 0) return null;
-                  return pdf.pageImages.map((pageImg, pageIdx) => (
-                    <div
-                      key={`pdf-page-${pdf.id}-${pageIdx}`}
-                      className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="text-center mb-3">
-                          <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800">
-                            PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
-                          </h3>
-                          <p className="font-semibold text-[11pt] text-blue-900 mt-0.5">
-                            {pdf.name}
-                          </p>
-                          <p className="italic text-[10pt] text-slate-600">
-                            (Kèm theo Biên bản tự kiểm tra PCCC số: {report.so || '.../VHIALY'})
-                          </p>
-                        </div>
-                        <div className="flex justify-center items-center bg-slate-50 p-2 sm:p-4 border border-slate-300 rounded shadow-xs overflow-hidden">
-                          <img
-                            src={pageImg}
-                            alt={pdf.name}
-                            className="w-full h-auto max-h-[620px] object-contain rounded-xs"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ));
-                })}
+                .map((pdf) => (
+                  <PdfDocumentRenderer
+                    key={`pdf-doc-${pdf.id}`}
+                    pdf={pdf}
+                    so={report.so}
+                  />
+                ))}
           </>
         );
       })()}

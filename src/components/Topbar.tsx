@@ -215,21 +215,16 @@ export const Topbar: React.FC<TopbarProps> = ({
         <div className="flex items-center justify-between py-2 gap-3 flex-wrap">
           {/* Navigation Tabs */}
           <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 shrink-0">
-            {/* Tab Soạn thảo chỉ hiển thị cho Admin */}
-            {userRole === 'admin' && (
+            {currentView === 'form' && (
               <button
                 type="button"
                 id="tab-view-form"
                 onClick={() => onNavigate('form')}
-                title="Vào giao diện soạn thảo & chỉnh sửa chi tiết biểu mẫu"
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                  currentView === 'form'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                title="Đang trong giao diện sửa biểu mẫu"
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-amber-700 shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
-                <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Soạn thảo biểu mẫu</span>
+                <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                <span>Sửa biểu mẫu</span>
               </button>
             )}
 
@@ -308,10 +303,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                 id="btn-new-report"
                 onClick={onNewReport}
                 title="Tạo biên bản cho tháng mới"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition whitespace-nowrap cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 shadow-sm hover:shadow rounded-xl transition-all whitespace-nowrap cursor-pointer ring-2 ring-emerald-600/20"
               >
-                <Plus className="w-3.5 h-3.5 text-slate-600" />
-                <span>Tạo mới</span>
+                <Plus className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                <span>+ Tạo mới</span>
               </button>
             )}
           </div>

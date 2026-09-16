@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
 import { ReportData, UserRole } from '../types';
-import { Printer, Download, Edit3, ArrowLeft, ZoomIn, ZoomOut, FileText, Loader2, Lock } from 'lucide-react';
+import {
+  Printer,
+  Download,
+  ArrowLeft,
+  ZoomIn,
+  ZoomOut,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  Edit,
+} from 'lucide-react';
 import { exportElementToPdf, generatePdfFilename } from '../services/exportPdf';
 import { DocumentA4Content } from './DocumentA4Content';
 
 interface ReportDetailViewProps {
   report: ReportData;
-  onEdit: () => void;
+  onEdit?: () => void;
   onBackToHistory?: () => void;
   onExportWord: () => void;
   onPrint: () => void;
   userRole?: UserRole;
   onOpenAdminLogin?: () => void;
+  onUpdateReport?: (updated: ReportData) => void;
 }
 
 export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
@@ -21,10 +32,10 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
   onExportWord,
   onPrint,
   userRole = 'viewer',
-  onOpenAdminLogin,
 }) => {
   const [zoom, setZoom] = useState<number>(100);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const handleDownloadPdf = async () => {
     const docEl = document.getElementById('detail-document-canvas');
@@ -46,7 +57,7 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 space-y-4 font-sans">
+    <div className="max-w-6xl mx-auto px-3 sm:px-6 py-6 space-y-5 font-sans">
       {/* Action Bar Header */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -61,20 +72,20 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
             </button>
           )}
 
-          {userRole === 'admin' && (
+          {userRole === 'admin' && onEdit && (
             <button
               onClick={onEdit}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer"
-              title="Quay lại giao diện soạn thảo"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition cursor-pointer"
+              title="Chỉnh sửa nội dung biểu mẫu này"
             >
-              <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-              <span>Chỉnh sửa biểu mẫu</span>
+              <Edit className="w-3.5 h-3.5 text-amber-600" />
+              <span>Sửa</span>
             </button>
           )}
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-          <div className="flex items-center gap-1 text-xs font-medium text-slate-600">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
             <span className="font-bold text-slate-800">Biên bản Tháng {report.report_month}</span>
           </div>
         </div>
@@ -119,7 +130,7 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
           <button
             onClick={onExportWord}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm shadow-blue-500/25 transition cursor-pointer"
-            title="Xuất file Word (.docx) chuẩn theo quy định"
+            title="Xuất file Word (.docx) chuẩn theo quy định kèm Phụ lục"
           >
             <Download className="w-4 h-4" />
             <span>Tải Word (.docx)</span>
@@ -136,8 +147,25 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
         </div>
       </div>
 
+      {/* Floating Notification */}
+      {actionMessage && (
+        <div className="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between shadow-lg border border-slate-700 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{actionMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionMessage(null)}
+            className="text-slate-400 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Document View Frame */}
-      <div className="overflow-x-auto pb-6 flex justify-center">
+      <div className="overflow-x-auto pb-2 flex justify-center">
         <DocumentA4Content
           report={report}
           id="detail-document-canvas"

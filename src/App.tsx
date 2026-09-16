@@ -22,9 +22,7 @@ export default function App() {
     return list.length > 0 ? list[0] : createNewReport();
   });
   const [userRole, setUserRole] = useState<UserRole>(() => adminAuthService.getUserRole());
-  const [currentView, setCurrentView] = useState<'form' | 'preview' | 'history'>(() => {
-    return adminAuthService.getUserRole() === 'admin' ? 'form' : 'history';
-  });
+  const [currentView, setCurrentView] = useState<'form' | 'preview' | 'history'>('history');
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -36,13 +34,33 @@ export default function App() {
   const [staffDirectory, setStaffDirectory] = useState(() => storageService.getStaffDirectory());
 
   useEffect(() => {
-    const unsubscribe = adminAuthService.subscribe((role) => {
+    const unsubscribeAuth = adminAuthService.subscribe((role) => {
       setUserRole(role);
       if (role === 'viewer' && currentView === 'form') {
         setCurrentView('history');
       }
     });
-    return unsubscribe;
+
+    const unsubscribeStorage = storageService.subscribe(() => {
+      const updatedList = storageService.getAllReports();
+      setReports(updatedList);
+      setCurrentReport((prev) => {
+        const found = updatedList.find((r) => r.id === prev.id);
+        if (found) {
+          const prevCount = (prev.attachedPdfs || []).length;
+          const foundCount = (found.attachedPdfs || []).length;
+          if (foundCount > prevCount) {
+            return found;
+          }
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeStorage();
+    };
   }, [currentView]);
 
   const refreshReports = () => {
@@ -244,6 +262,10 @@ export default function App() {
             onPrint={() => handlePreviewPrint()}
             userRole={userRole}
             onOpenAdminLogin={handleOpenAdminLogin}
+            onUpdateReport={(updated) => {
+              setCurrentReport(updated);
+              refreshReports();
+            }}
           />
         )}
 
@@ -252,11 +274,7 @@ export default function App() {
             reports={reports}
             onSelectReport={(rep) => {
               handleSelectReport(rep);
-              if (userRole === 'admin') {
-                setCurrentView('form');
-              } else {
-                setCurrentView('preview');
-              }
+              setCurrentView('form');
             }}
             onViewReportDetail={(rep) => {
               handleSelectReport(rep);
@@ -303,8 +321,6 @@ export default function App() {
             setShowPinModal(false);
             if (pinModalMode === 'login') {
               setSaveMessage('Đăng nhập Quản trị viên thành công!');
-              // Automatically switch to form editing if user logged in
-              setCurrentView('form');
             } else {
               setSaveMessage('Đổi mã PIN Quản trị viên thành công (Đã đồng bộ sang máy khác)!');
             }

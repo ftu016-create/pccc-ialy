@@ -80,16 +80,15 @@ export const ReportForm: React.FC<ReportFormProps> = ({
     );
   };
 
-  const handleSelectStaffForPerson = (id: string, staffName: string) => {
+  const handleAddStaffFromDirectory = (staffName: string) => {
     const found = staffDirectory.find((s) => s.name === staffName);
     if (!found) return;
-    const updated = data.people.map((p) => {
-      if (p.id === id) {
-        return { ...p, name: found.name, role: found.role };
-      }
-      return p;
-    });
-    updateField('people', updated);
+    const newPerson: Person = {
+      id: `p-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: found.name,
+      role: found.role,
+    };
+    updateField('people', [...data.people, newPerson]);
   };
 
   // --- 2. EQUIP (PHƯƠNG TIỆN, HỆ THỐNG PCCC) ---
@@ -458,14 +457,31 @@ export const ReportForm: React.FC<ReportFormProps> = ({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={addPerson}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-md text-xs font-bold transition-colors shadow-2xs"
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>+ Thêm thành viên đoàn</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) handleAddStaffFromDirectory(e.target.value);
+              }}
+              className="px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-300 text-slate-700 rounded-md cursor-pointer hover:border-slate-400 font-medium"
+            >
+              <option value="">+ Chọn từ danh sách đoàn...</option>
+              {staffDirectory.map((st, i) => (
+                <option key={i} value={st.name}>
+                  {st.name} ({st.role})
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={addPerson}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-md text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Thêm thành viên</span>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2.5">
@@ -484,7 +500,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
                   value={p.name}
                   onChange={(e) => updatePerson(p.id, 'name', e.target.value)}
                   placeholder="Họ và tên..."
-                  className="w-44 sm:w-56 px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium"
+                  className="w-48 sm:w-64 px-3 py-1.5 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
 
@@ -511,38 +527,11 @@ export const ReportForm: React.FC<ReportFormProps> = ({
                 </datalist>
               </div>
 
-              {/* Dropdown select to pick fast from directory */}
-              <div className="w-full md:w-44 shrink-0">
-                <select
-                  value=""
-                  onChange={(e) => handleSelectStaffForPerson(p.id, e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs bg-white border border-slate-300 text-slate-600 rounded-lg cursor-pointer hover:border-slate-400"
-                >
-                  <option value="">▼ Danh sách đoàn</option>
-                  {staffDirectory.map((st, i) => (
-                    <option key={i} value={st.name}>
-                      {st.name} ({st.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Signature status / button */}
-              <button
-                type="button"
-                onClick={() => setSigningPerson({ name: p.name, isManager: false })}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition shrink-0"
-                title={`Chèn chữ ký cho ${p.name || `Thành viên ${idx + 1}`}`}
-              >
-                <PenTool className="w-3 h-3 text-blue-600" />
-                <span>{p.signatureImage ? 'Đã ký' : 'Ký'}</span>
-              </button>
-
               {/* Delete button */}
               <button
                 type="button"
                 onClick={() => removePerson(p.id)}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 self-end md:self-center"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition shrink-0 self-end md:self-center cursor-pointer"
                 title="Xóa thành viên này"
               >
                 <Trash2 className="w-4 h-4" />
