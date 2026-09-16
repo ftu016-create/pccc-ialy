@@ -10,10 +10,6 @@ export const DEFAULT_STAFF_DIRECTORY: { name: string; role: string }[] = [
   { name: 'A Ran', role: 'T.Trạm 500kV Ialy - Thành viên' },
   { name: 'Phùng Ngọc Tú', role: 'Trực chính Gian máy Ialy MR - Thành viên' },
   { name: 'Nguyễn Hồng Quang', role: 'Trực chính Gian máy Ialy MR - Thành viên' },
-  { name: 'Lê Văn Đạt', role: 'Kỹ sư An toàn - Thành viên' },
-  { name: 'Đặng Ngọc Sơn', role: 'Trưởng ca Vận hành - Thành viên' },
-  { name: 'Vũ Mạnh Cường', role: 'Đội trưởng Đội PCCC cơ sở' },
-  { name: 'Nguyễn Văn Hiếu', role: 'Kỹ thuật viên TĐKTT - Thành viên' },
 ];
 
 export const DEFAULT_PEOPLE: Person[] = [
@@ -121,8 +117,104 @@ export function createNewReport(override?: Partial<ReportData>): ReportData {
       'Tiếp tục duy trì chế độ tự kiểm tra định kỳ; tăng cường kiểm tra trong các đợt sửa chữa, các công việc có sử dụng nguồn lửa, nguồn nhiệt; bảo đảm các phương tiện, hệ thống PCCC luôn ở trạng thái sẵn sàng hoạt động; thường xuyên tuyên truyền, huấn luyện và diễn tập PCCC&CNCH theo kế hoạch.'
     ],
 
-    photos: [],
-    attachedPdfs: [],
+    // Nạp sẵn 7 hình ảnh hiện trường cho Phụ lục I
+    photos: JSON.parse(JSON.stringify(DEFAULT_IALY_SAMPLE_PHOTOS)),
+
+    // Nạp sẵn Bảng 02 sổ theo dõi PDF cho Phụ lục II
+    attachedPdfs: [
+      {
+        id: 'sample-bang-02-pdf',
+        name: 'Bảng 02 sổ theo dõi phương tiện PCCC&CNCH Ialy.pdf',
+        type: 'pdf',
+        sizeBytes: 156400,
+        pageCount: 1,
+        uploadedAt: '27/08/2026',
+        includedInExport: true,
+        pageImages: [
+          `data:image/svg+xml;utf8,${encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
+              <rect width="1200" height="820" fill="#ffffff"/>
+              <text x="50" y="50" font-family="'Times New Roman', serif" font-size="18" font-weight="bold" fill="#111827">CÔNG TY THỦY ĐIỆN IALY</text>
+              <text x="50" y="75" font-family="'Times New Roman', serif" font-size="18" font-weight="bold" fill="#111827" text-decoration="underline">PHÂN XƯỞNG VẬN HÀNH IALY</text>
+              <text x="1150" y="50" font-family="'Times New Roman', serif" font-size="18" font-weight="bold" fill="#111827" text-anchor="end">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</text>
+              <text x="1150" y="75" font-family="'Times New Roman', serif" font-size="18" font-weight="bold" fill="#111827" text-anchor="end" text-decoration="underline">Độc lập - Tự do - Hạnh phúc</text>
+              <text x="600" y="130" font-family="'Times New Roman', serif" font-size="24" font-weight="bold" fill="#1e3a8a" text-anchor="middle">BẢNG 02: SỔ THEO DÕI PHƯƠNG TIỆN PCCC &amp; CNCH ĐỊNH KỲ</text>
+              <text x="600" y="160" font-family="'Times New Roman', serif" font-size="16" font-style="italic" fill="#4b5563" text-anchor="middle">(Kèm theo Biên bản tự kiểm tra PCCC số: 1209/VHIALY - Công ty Thủy điện Ialy)</text>
+              <rect x="50" y="185" width="1100" height="38" fill="#e2e8f0" stroke="#1f2937" stroke-width="1.2"/>
+              <line x1="110" y1="185" x2="110" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <line x1="380" y1="185" x2="380" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <line x1="470" y1="185" x2="470" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <line x1="530" y1="185" x2="530" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <line x1="640" y1="185" x2="640" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <line x1="980" y1="185" x2="980" y2="680" stroke="#1f2937" stroke-width="1"/>
+              <text x="80" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">STT</text>
+              <text x="245" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">Ký hiệu / Mã phương tiện</text>
+              <text x="425" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">Loại PT</text>
+              <text x="500" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">SL</text>
+              <text x="585" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">Ngày KT</text>
+              <text x="810" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">Tình trạng kiểm tra thực tế &amp; Đánh giá</text>
+              <text x="1065" y="210" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">Người kiểm tra</text>
+              <rect x="50" y="223" width="1100" height="28" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="242" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">1</text>
+              <text x="120" y="242" font-family="'Times New Roman', serif" font-size="14">BỘT-▼288,3-001IMR-PX1</text>
+              <text x="425" y="242" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Bình</text>
+              <text x="500" y="242" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">1</text>
+              <text x="585" y="242" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">23/07/2026</text>
+              <text x="650" y="242" font-family="'Times New Roman', serif" font-size="14">Loa vòi tốt, áp lực vùng xanh / Đạt</text>
+              <text x="995" y="242" font-family="'Times New Roman', serif" font-size="14">Nguyễn Quang Minh</text>
+              <rect x="50" y="251" width="1100" height="28" fill="#f8fafc" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="270" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">2</text>
+              <text x="120" y="270" font-family="'Times New Roman', serif" font-size="14">CO2-▼288,3-001IMR-PX1</text>
+              <text x="425" y="270" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Bình</text>
+              <text x="500" y="270" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">1</text>
+              <text x="585" y="270" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">23/07/2026</text>
+              <text x="650" y="270" font-family="'Times New Roman', serif" font-size="14">Cân đủ trọng lượng 15,3kg, niêm phong tốt / Đạt</text>
+              <text x="995" y="270" font-family="'Times New Roman', serif" font-size="14">Nguyễn Quang Minh</text>
+              <rect x="50" y="279" width="1100" height="28" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="298" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">3</text>
+              <text x="120" y="298" font-family="'Times New Roman', serif" font-size="14">Lăng chữa cháy Cao trình 348m</text>
+              <text x="425" y="298" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Cái</text>
+              <text x="500" y="298" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">4</text>
+              <text x="585" y="298" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">23/07/2026</text>
+              <text x="650" y="298" font-family="'Times New Roman', serif" font-size="14" fill="#b91c1c" font-weight="bold">Bị vỡ 01 lăng đã báo cáo, chờ bổ sung thay thế</text>
+              <text x="995" y="298" font-family="'Times New Roman', serif" font-size="14">Nguyễn Khánh Toàn</text>
+              <rect x="50" y="307" width="1100" height="28" fill="#f8fafc" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="326" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">4</text>
+              <text x="120" y="326" font-family="'Times New Roman', serif" font-size="14">Bình OXY Cao trình 309m</text>
+              <text x="425" y="326" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Bộ</text>
+              <text x="500" y="326" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">2</text>
+              <text x="585" y="326" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">26/07/2026</text>
+              <text x="650" y="326" font-family="'Times New Roman', serif" font-size="14" fill="#b91c1c" font-weight="bold">Áp suất ngoài vùng xanh (280 và 310bar), cần nạp khí</text>
+              <text x="995" y="326" font-family="'Times New Roman', serif" font-size="14">Phạm Đình Đức</text>
+              <rect x="50" y="335" width="1100" height="28" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="354" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">5</text>
+              <text x="120" y="354" font-family="'Times New Roman', serif" font-size="14">Họng nước chữa cháy Gian máy Ialy</text>
+              <text x="425" y="354" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Họng</text>
+              <text x="500" y="354" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">12</text>
+              <text x="585" y="354" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">20/07/2026</text>
+              <text x="650" y="354" font-family="'Times New Roman', serif" font-size="14" fill="#b91c1c" font-weight="bold">Rò rỉ nước tại khớp nối van khóa (01 họng)</text>
+              <text x="995" y="354" font-family="'Times New Roman', serif" font-size="14">Đinh Văn Thành</text>
+              <rect x="50" y="363" width="1100" height="28" fill="#f8fafc" stroke="#9ca3af" stroke-width="0.8"/>
+              <text x="80" y="382" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">6</text>
+              <text x="120" y="382" font-family="'Times New Roman', serif" font-size="14">Bình bột MFZ8 Trạm 500kV Ialy</text>
+              <text x="425" y="382" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">Bình</text>
+              <text x="500" y="382" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">18</text>
+              <text x="585" y="382" font-family="'Times New Roman', serif" font-size="14" text-anchor="middle">21/07/2026</text>
+              <text x="650" y="382" font-family="'Times New Roman', serif" font-size="14" fill="#b91c1c" font-weight="bold">01 bình kim tụt vùng đỏ, đề xuất nạp sạc lại</text>
+              <text x="995" y="382" font-family="'Times New Roman', serif" font-size="14">Nguyễn Văn Trung</text>
+              <rect x="50" y="185" width="1100" height="206" fill="none" stroke="#1f2937" stroke-width="1.5"/>
+              <text x="50" y="425" font-family="'Times New Roman', serif" font-size="14" font-style="italic" fill="#4b5563">Ghi chú: Tình trạng phương tiện PCCC&amp;CNCH được kiểm tra định kỳ hàng tháng theo Mẫu quy định của EVN.</text>
+              <text x="180" y="470" font-family="'Times New Roman', serif" font-size="16" font-weight="bold" text-anchor="middle">NGƯỜI LẬP BẢNG</text>
+              <text x="180" y="492" font-family="'Times New Roman', serif" font-size="14" font-style="italic" fill="#6b7280" text-anchor="middle">(Ký và ghi rõ họ tên)</text>
+              <text x="180" y="560" font-family="'Times New Roman', serif" font-size="16" font-weight="bold" text-anchor="middle">Trần Thanh Chương</text>
+              <text x="1000" y="470" font-family="'Times New Roman', serif" font-size="16" font-weight="bold" text-anchor="middle">KT. QUẢN ĐỐC</text>
+              <text x="1000" y="492" font-family="'Times New Roman', serif" font-size="15" font-weight="bold" text-anchor="middle">PHÓ QUẢN ĐỐC</text>
+              <text x="1000" y="560" font-family="'Times New Roman', serif" font-size="16" font-weight="bold" text-anchor="middle">Nguyễn Hoàng Phi</text>
+            </svg>
+          `)}`,
+        ],
+      },
+    ],
 
     end_h: '15',
     end_p: '30',
