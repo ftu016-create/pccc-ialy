@@ -10,6 +10,7 @@ import {
   fetchAllSharedPcccReports,
   savePcccReportToFirestore,
   deletePcccReportFromFirestore,
+  subscribePcccReportsFromFirestore,
 } from '../lib/firebase';
 
 const REPORTS_KEY = 'pccc_ialy_reports_v1';
@@ -32,14 +33,14 @@ function sanitizeReport(report: ReportData): ReportData {
   return { ...report };
 }
 
-// Khởi động: Tự động kết nối đám mây Firebase để tải báo cáo mới nhất về máy
+// Khởi động đồng bộ: Tải dữ liệu từ Google Firebase Firestore
 let hasInitializedAsync = false;
 async function initAsyncStorage() {
   if (hasInitializedAsync || typeof window === 'undefined') return;
   hasInitializedAsync = true;
 
   try {
-    // 1. Tải trước từ bộ nhớ IndexedDB của máy
+    // 1. Tải trước từ bộ nhớ máy để hiển thị siêu nhanh
     const idbReports = await idbGetAllReports();
     let hasNewData = false;
     if (idbReports && idbReports.length > 0) {
@@ -49,25 +50,43 @@ async function initAsyncStorage() {
       });
     }
 
-    // 2. TẢI TỪ ĐÁM MÂY GOOGLE FIREBASE (Đồng bộ mọi máy tính & điện thoại)
+    // 2. ĐỒNG BỘ ĐÁM MÂY GOOGLE FIREBASE
     try {
       const cloudReports = await fetchAllSharedPcccReports();
       if (cloudReports && cloudReports.length > 0) {
         cloudReports.forEach((rep) => {
           memoryReportsCache.set(rep.id, sanitizeReport(rep));
-          idbSaveReport(rep);
+          idbSaveReport(rep).catch(() => {});
         });
         hasNewData = true;
       }
     } catch (cloudErr) {
-      console.warn('Chưa tải được từ đám mây:', cloudErr);
+      console.warn('Chưa kết nối được Firestore đám mây:', cloudErr);
     }
 
     if (hasNewData) {
       notifyListeners();
     }
+
+    // 3. LẮNG NGHE THỜI GIAN THỰC (Real-time listener giữa các máy)
+    subscribePcccReportsFromFirestore((cloudReports) => {
+      if (cloudReports && cloudReports.length > 0) {
+        let changed = false;
+        cloudReports.forEach((rep) => {
+          const current = memoryReportsCache.get(rep.id);
+          if (!current || JSON.stringify(current) !== JSON.stringify(rep)) {
+            memoryReportsCache.set(rep.id, sanitizeReport(rep));
+            idbSaveReport(rep).catch(() => {});
+            changed = true;
+          }
+        });
+        if (changed) {
+          notifyListeners();
+        }
+      }
+    });
   } catch (err) {
-    console.warn('Async storage init error:', err);
+    console.warn('Lỗi khởi động storage:', err);
   }
 }
 
@@ -119,20 +138,20 @@ export const storageService = {
   saveReport(report: ReportData): void {
     const sanitized = sanitizeReport(report);
 
-    // 1. Lưu vào bộ nhớ máy
+    // 1. Lưu vào bộ nhớ nhanh
     memoryReportsCache.set(sanitized.id, sanitized);
     idbSaveReport(sanitized).catch(() => {});
 
-    // 2. TỰ ĐỘNG ĐẨY LÊN ĐÁM MÂY GOOGLE FIREBASE
-    savePcccReportToFirestore(sanitized).catch((e) => console.warn('Lỗi lưu đám mây:', e));
+    // 2. BẮN TỰ ĐỘNG LÊN ĐÁM MÂY GOOGLE FIREBASE (Đồng bộ mọi máy tính & điện thoại)
+    savePcccReportToFirestore(sanitized).catch((e) => {
+      console.warn('Lỗi đồng bộ Firebase:', e);
+    });
 
-    // 3. Lưu vào localStorage
+    // 3. Lưu vào localStorage dự phòng
     try {
       const all = Array.from(memoryReportsCache.values());
       localStorage.setItem(REPORTS_KEY, JSON.stringify(all));
-    } catch (e) {
-      // Ignored
-    }
+    } catch (e) {}
 
     notifyListeners();
   },
