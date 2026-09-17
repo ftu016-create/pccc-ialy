@@ -5,7 +5,8 @@ import {
   setDoc,
   collection,
   getDocs,
-  deleteDoc
+  deleteDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { ReportData } from '../types';
 
@@ -22,7 +23,7 @@ export const firebaseConfig = {
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
-// 1. Tự động tải tất cả biên bản từ Đám mây về khi mở web
+// 1. Tải toàn bộ danh sách biên bản từ đám mây Firebase
 export async function fetchAllSharedPcccReports(): Promise<ReportData[] | null> {
   try {
     const colRef = collection(db, 'pccc_reports');
@@ -31,7 +32,7 @@ export async function fetchAllSharedPcccReports(): Promise<ReportData[] | null> 
       const reports: ReportData[] = [];
       snap.forEach((d) => {
         const data = d.data();
-        if (data.dataJson) {
+        if (data && data.dataJson) {
           try {
             const r = JSON.parse(data.dataJson);
             reports.push(r);
@@ -43,12 +44,12 @@ export async function fetchAllSharedPcccReports(): Promise<ReportData[] | null> 
       }
     }
   } catch (err) {
-    console.warn('Lỗi lấy danh sách báo cáo PCCC từ Firestore:', err);
+    console.warn('Lỗi lấy báo cáo PCCC từ Firestore:', err);
   }
   return null;
 }
 
-// 2. Tự động lưu biên bản lên Đám mây để máy khác thấy ngay
+// 2. Tự động lưu và phát đồng bộ lên đám mây Firebase
 export async function savePcccReportToFirestore(report: ReportData): Promise<void> {
   try {
     const docRef = doc(db, 'pccc_reports', report.id);
@@ -56,23 +57,52 @@ export async function savePcccReportToFirestore(report: ReportData): Promise<voi
       docRef,
       {
         id: report.id,
-        report_month: report.report_month,
+        report_month: report.report_month || '',
         dataJson: JSON.stringify(report),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       },
       { merge: true }
     );
   } catch (err) {
-    console.warn('Lỗi đồng bộ báo cáo PCCC lên Firestore:', err);
+    console.warn('Lỗi lưu báo cáo PCCC lên Firestore:', err);
   }
 }
 
-// 3. Xóa biên bản trên Đám mây
+// 3. Xóa biên bản trên đám mây
 export async function deletePcccReportFromFirestore(reportId: string): Promise<void> {
   try {
     const docRef = doc(db, 'pccc_reports', reportId);
     await deleteDoc(docRef);
   } catch (err) {
     console.warn('Lỗi xóa báo cáo PCCC trên Firestore:', err);
+  }
+}
+
+// 4. Lắng nghe thay đổi trực tiếp (Real-time Listener) để Máy 2 tự nhảy số khi Máy 1 bấm Lưu
+export function subscribePcccReportsFromFirestore(onUpdate: (reports: ReportData[]) => void): () => void {
+  try {
+    const colRef = collection(db, 'pccc_reports');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const reports: ReportData[] = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          if (data && data.dataJson) {
+            try {
+              reports.push(JSON.parse(data.dataJson));
+            } catch (_) {}
+          }
+        });
+        if (reports.length > 0) {
+          onUpdate(reports);
+        }
+      },
+      (err) => {
+        console.warn('Lỗi lắng nghe thời gian thực Firestore:', err);
+      }
+    );
+  } catch (e) {
+    return () => {};
   }
 }
