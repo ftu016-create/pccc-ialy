@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'viewer';
+export type UserRole = 'admin' | 'user' | 'viewer';
 
 export interface Person {
   id: string;
@@ -36,30 +36,39 @@ export interface EscapeItem {
   note: string;
 }
 
-export interface InspectionPhoto {
-  id: string;
-  title: string;
-  category: 'parking' | 'escape_route' | 'equipment' | 'other';
-  plant: 'ialy' | 'ialy_mr' | 'pk' | 'trạm_500kv' | 'other';
-  location: string;
-  description: string;
-  capturedAt?: string;
-  status: 'passed' | 'warning' | 'failed';
-  imageData: string;
-  filename?: string;
+export interface AiInspectionAnalysis {
+  status: 'pending' | 'analyzing' | 'completed' | 'failed';
+  detectedItems: string[];
+  findings: string;
+  recommendation: string;
+  complianceStatus: 'pass' | 'fail' | 'warning';
+  observedConditions?: string;
+  potentialAnomalies?: string;
+  pointsToCheck?: string;
+  description?: string;
+  confidence?: number;
+  analyzedAt?: string;
 }
 
-export interface AttachedDocument {
+export interface AttachmentItem {
   id: string;
-  name: string;
-  type: 'pdf' | 'docx' | 'image';
-  sizeBytes?: number;
-  pdfData?: string; // base64 string
-  pageCount?: number;
-  pageImages?: string[]; // Rendered PNG data URLs for each PDF page
-  uploadedAt: string;
-  note?: string;
-  includedInExport?: boolean;
+  reportId: string;
+  targetType: 'report' | 'equip' | 'fire' | 'escape' | 'general_area' | 'inspection_finding';
+  targetItemId?: string;
+  targetCategory?: string; // e.g. 'stair', 'exit_door', 'exit_sign', 'emergency_light', 'extinguisher', 'hose_cabinet', 'parking', 'fire_road', 'other'
+  plant: 'ialy' | 'ialy_mr';
+  locationDescription?: string;
+  fileType: 'image' | 'pdf';
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+  url?: string;
+  thumbnailUrl?: string;
+  description?: string;
+  uploadedBy: string;
+  createdAt: string;
+  aiAnalysis?: AiInspectionAnalysis;
 }
 
 export interface ReportData {
@@ -101,10 +110,6 @@ export interface ReportData {
   // 6. Kiến nghị
   recommendations: string[];
   
-  // 7. Phụ lục hình ảnh hiện trường & Tài liệu đính kèm
-  photos?: InspectionPhoto[];
-  attachedPdfs?: AttachedDocument[];
-  
   // Kết thúc & người ký
   end_h: string;
   end_p: string;
@@ -113,6 +118,12 @@ export interface ReportData {
   manager: string;
   manager_signature?: string;
   
+  // Trạng thái hoàn tất & Đính kèm đa phương tiện
+  status?: 'draft' | 'completed';
+  completed_at?: string;
+  completed_by?: string;
+  attachments?: AttachmentItem[];
+
   // Meta
   created_at: string;
   updated_at: string;

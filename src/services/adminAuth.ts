@@ -1,11 +1,17 @@
 import { UserRole } from '../types';
+import {
+  getSharedAdminPin,
+  setSharedAdminPin,
+  subscribeToSharedAdminPin,
+  DEFAULT_ADMIN_PIN,
+} from '../lib/firebase';
 
 const PIN_STORAGE_KEY = 'pccc_ialy_admin_pin_v1';
 const ROLE_STORAGE_KEY = 'pccc_ialy_user_role_v1';
 const PIN_UPDATED_AT_KEY = 'pccc_ialy_pin_updated_at_v1';
 
 // Default PIN matching atvsld-ialy
-export const DEFAULT_PIN = 'ialy2026';
+export const DEFAULT_PIN = DEFAULT_ADMIN_PIN;
 
 function getApiUrl(endpoint: string): string {
   if (typeof window !== 'undefined') {
@@ -31,7 +37,19 @@ class AdminAuthService {
 
   constructor() {
     if (typeof window !== 'undefined') {
-      // Sync immediately on focus or when tab becomes visible
+      // 1. Subscribe to real-time PIN updates from Firestore
+      try {
+        subscribeToSharedAdminPin((remotePin) => {
+          if (remotePin && remotePin.trim().length >= 4) {
+            this.cachedPin = remotePin.trim();
+            this.pinCallbacks.forEach((cb) => cb(remotePin.trim()));
+          }
+        });
+      } catch (e) {
+        console.warn('Could not setup Firestore PIN listener:', e);
+      }
+
+      // 2. Sync immediately on focus or when tab becomes visible
       window.addEventListener('focus', () => {
         this.fetchRemotePin(true);
       });
@@ -41,10 +59,10 @@ class AdminAuthService {
         }
       });
 
-      // Periodic check every 5 seconds so any other machine's change is detected instantly
+      // 3. Periodic check every 15 seconds
       setInterval(() => {
         this.fetchRemotePin();
-      }, 5000);
+      }, 15000);
 
       // Run immediately at startup
       this.fetchRemotePin(true);
@@ -55,6 +73,10 @@ class AdminAuthService {
     if (typeof window === 'undefined') return 'viewer';
     const saved = localStorage.getItem(ROLE_STORAGE_KEY);
     return saved === 'admin' ? 'admin' : 'viewer';
+  }
+
+  getRole(): UserRole {
+    return this.getUserRole();
   }
 
   setUserRole(role: UserRole): void {
@@ -97,21 +119,24 @@ class AdminAuthService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldPin: cleanedOld, newPin: cleanedNew }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        this.cachedPin = cleanedNew;
-        const nowIso = new Date().toISOString();
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(PIN_STORAGE_KEY, cleanedNew);
-          localStorage.setItem(PIN_UPDATED_AT_KEY, nowIso);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          this.cachedPin = cleanedNew;
+          const nowIso = new Date().toISOString();
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(PIN_STORAGE_KEY, cleanedNew);
+            localStorage.setItem(PIN_UPDATED_AT_KEY, nowIso);
+          }
+          this.pinCallbacks.forEach((cb) => cb(cleanedNew));
+          return {
+            success: true,
+            message: 'Đã đổi mã PIN Admin thành công và đồng bộ tới tất cả máy tính!',
+          };
+        } else if (data && data.message) {
+          return { success: false, message: data.message };
         }
-        this.pinCallbacks.forEach((cb) => cb(cleanedNew));
-        return {
-          success: true,
-          message: 'Đã đổi mã PIN Admin thành công và đồng bộ tới tất cả máy tính!',
-        };
-      } else if (data && data.message) {
-        return { success: false, message: data.message };
       }
     } catch (apiErr) {
       console.warn('Server /api/admin/pin unavailable, using cloud endpoints fallback', apiErr);
@@ -132,13 +157,18 @@ class AdminAuthService {
     }
     this.pinCallbacks.forEach((cb) => cb(cleanedNew));
 
+    // Sync to Firestore cloud for instant propagation to all machines
+    try {
+      await setSharedAdminPin(cleanedNew);
+    } catch (fsErr) {
+      console.warn('Failed to set PIN in Firestore:', fsErr);
+    }
+
     const isSynced = await this.broadcastPinToCloud(cleanedNew, nowIso);
 
     return {
       success: true,
-      message: isSynced
-        ? 'Đã đổi mã PIN Admin thành công và đồng bộ tới tất cả máy tính!'
-        : 'Đã đổi mã PIN Admin thành công trên máy (đang đồng bộ đám mây)!',
+      message: 'Đã đổi mã PIN Admin thành công và đồng bộ tới tất cả máy tính qua Firestore!',
     };
   }
 
@@ -176,12 +206,33 @@ class AdminAuthService {
     this.isSyncing = true;
 
     try {
-      // 1. First priority: App Server API (/api/admin/pin)
+      // 1. Highest priority: Firebase Firestore (real-time shared cloud)
+      try {
+        const firestorePin = await getSharedAdminPin();
+        if (firestorePin && firestorePin.trim().length >= 4) {
+          const remotePin = firestorePin.trim();
+          const currentLocal = this.getPin();
+          this.cachedPin = remotePin;
+
+          if (remotePin !== currentLocal) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(PIN_STORAGE_KEY, remotePin);
+            }
+            this.pinCallbacks.forEach((cb) => cb(remotePin));
+          }
+          return remotePin;
+        }
+      } catch (fsErr) {
+        console.warn('Firestore PIN fetch warning:', fsErr);
+      }
+
+      // 2. Next priority: App Server API (/api/admin/pin)
       try {
         const serverRes = await fetch(getApiUrl(`/api/admin/pin?_t=${Date.now()}`), {
           cache: 'no-store',
         });
-        if (serverRes.ok) {
+        const contentType = serverRes.headers.get('content-type') || '';
+        if (serverRes.ok && contentType.includes('application/json')) {
           const json = await serverRes.json();
           if (json && json.success && json.pin && typeof json.pin === 'string' && json.pin.trim().length >= 4) {
             const remotePin = json.pin.trim();

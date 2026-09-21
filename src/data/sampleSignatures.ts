@@ -7,4 +7,3 @@ export function getSignatureForPerson(name: string, customSig?: string): string 
   }
   return null;
 }
-

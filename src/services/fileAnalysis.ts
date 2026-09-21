@@ -508,58 +508,6 @@ export function analyzeInspectionText(
       continue;
     }
 
-    // 5) Bình CO2-▼309-GM-058-PX1 vòi bị rạn nứt (Cao trình 309m Gian máy NMTĐ Ialy)
-    if (
-      (/vòi bị rạn nứt|rạn nứt|vòi.*rạn/i.test(line) || (/co2.*309/i.test(line) && /vòi/i.test(line))) &&
-      !issues.some((i) => i.id.startsWith('iss-co2-voi-309'))
-    ) {
-      const issueId = `iss-co2-voi-309-${Date.now()}`;
-      issues.push({
-        id: issueId,
-        equipmentName: 'Bình CO2 (CO2-▼309-GM-058-PX1)',
-        plant: 'ialy',
-        category: 'extinguisher',
-        location: 'Gian máy Cao trình 309m - NMTĐ Ialy',
-        elevation: 'Cao trình 309,00m',
-        finding: 'Kiểm tra bình CO2-▼309-GM-058-PX1: loa tốt, vỏ không rỉ sét nhưng vòi phun cao su bị rạn nứt, tiềm ẩn nguy cơ nứt vỡ khi phun.',
-        severity: 'critical',
-        suggestedBadCount: 1,
-        suggestedNote: '[NMTĐ Ialy] 01 bình CO2 (CO2-▼309-GM-058-PX1) vòi phun bị rạn nứt tại Cao trình 309m, cần thay vòi',
-        suggestedRecommendation:
-          'Thay mới vòi phun cao su cho bình CO2-▼309-GM-058-PX1 tại Gian máy Cao trình 309m (Nhà máy thủy điện Ialy) để bảo đảm an toàn khi vận hành.',
-        manager: 'Lê Văn Đạt',
-        checkedDate: '27/07/2026',
-        rawText: line,
-      });
-      continue;
-    }
-
-    // 6) 10 bình CO2 tại Cao trình 303m ghi chú "Thay mới" (CO2-▼303-GM-044 đến 053)
-    if (
-      ((/303.*thay mới/i.test(line) || (/co2.*303/i.test(line) && /thay mới/i.test(line))) || (/10 bình co2/i.test(line) && /thay mới/i.test(line))) &&
-      !issues.some((i) => i.id.startsWith('iss-co2-thaymoi-303'))
-    ) {
-      const issueId = `iss-co2-thaymoi-303-${Date.now()}`;
-      issues.push({
-        id: issueId,
-        equipmentName: '10 bình CO2 (CO2-▼303-GM-044 đến 053)',
-        plant: 'ialy',
-        category: 'extinguisher',
-        location: 'Gian máy Cao trình 303m - NMTĐ Ialy',
-        elevation: 'Cao trình 303,00m',
-        finding: 'Ghi nhận 10 bình CO2 tại Cao trình 303m đã hết hạn kiểm định/sử dụng, được lập biên bản đề xuất thay mới.',
-        severity: 'critical',
-        suggestedBadCount: 10,
-        suggestedNote: '[NMTĐ Ialy] 10 bình CO2 tại Cao trình 303m Gian máy đề nghị thay mới theo sổ theo dõi',
-        suggestedRecommendation:
-          'Khẩn trương hoàn tất thủ tục cấp phát và thay mới 10 bình CO2 (ký hiệu CO2-▼303-GM-044 đến 053) tại Gian máy Cao trình 303m NMTĐ Ialy.',
-        manager: 'Nguyễn Văn Toàn',
-        checkedDate: '28/07/2026',
-        rawText: line,
-      });
-      continue;
-    }
-
     // Generic defect row extraction
     if (defectFound) {
       const parts = line.split('|').map((p) => p.trim());
@@ -922,7 +870,25 @@ export function applyInspectionAnalysisToReport(
     updated.recommendations = [...newRecs, ...existingRecs];
   }
 
-  // 3. Keep manual delegation as specified by user (do not auto-add shift personnel)
+  // 3. Add detected personnel to Delegation ("Danh sách đoàn")
+  if (options.addPersonnelToDelegation && analysis.detectedManagers.length > 0) {
+    let addedCount = 0;
+    analysis.detectedManagers.forEach((mName) => {
+      const exists = updated.people.some(
+        (p) => p.name.trim().toLowerCase() === mName.trim().toLowerCase()
+      );
+      if (!exists && addedCount < 4) {
+        const isMR = scope === 'ialy_mr' || (scope === 'auto' && analysis.detectedPlants.primaryPlant === 'ialy_mr');
+        updated.people.push({
+          id: `p-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          name: mName,
+          role: isMR ? 'Cán bộ kiểm tra PCCC NMTĐ Ialy MR' : 'Cán bộ kiểm tra PCCC NMTĐ Ialy',
+        });
+        addedCount++;
+        appliedSummary.push(`Thêm đồng chí ${mName} vào Danh sách đoàn`);
+      }
+    });
+  }
 
   return { updatedReport: updated, appliedSummary };
 }

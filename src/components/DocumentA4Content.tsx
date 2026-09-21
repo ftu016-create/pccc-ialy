@@ -1,89 +1,7 @@
 import React from 'react';
-import { ReportData, InspectionPhoto, AttachedDocument } from '../types';
+import { ReportData } from '../types';
 import { getSignatureForPerson } from '../data/sampleSignatures';
-import { getReportMonthDisplay } from '../utils/photoUtils';
-import { renderPdfPagesToDataUrls } from '../utils/pdfRenderUtils';
-
-const PdfDocumentRenderer: React.FC<{ pdf: AttachedDocument; so: string }> = ({ pdf, so }) => {
-  const [images, setImages] = React.useState<string[]>(() => pdf.pageImages || []);
-  const [loading, setLoading] = React.useState(false);
-
-  React.useEffect(() => {
-    if ((!images || images.length === 0) && pdf.pdfData) {
-      let isMounted = true;
-      setLoading(true);
-      renderPdfPagesToDataUrls(pdf.pdfData, 20, 1.8)
-        .then((rendered) => {
-          if (isMounted && rendered.length > 0) {
-            setImages(rendered);
-            pdf.pageImages = rendered;
-          }
-        })
-        .finally(() => {
-          if (isMounted) setLoading(false);
-        });
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [pdf, images]);
-
-  if (images && images.length > 0) {
-    return (
-      <>
-        {images.map((pageImg, pageIdx) => (
-          <div
-            key={`pdf-page-${pdf.id}-${pageIdx}`}
-            className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page flex flex-col justify-between"
-          >
-            <div>
-              <div className="text-center mb-3">
-                <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800">
-                  PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
-                </h3>
-                <p className="font-semibold text-[11pt] text-blue-900 mt-0.5">
-                  {pdf.name} {images.length > 1 ? `(Trang ${pageIdx + 1}/${images.length})` : ''}
-                </p>
-                <p className="italic text-[10pt] text-slate-600">
-                  (Kèm theo Biên bản tự kiểm tra PCCC số: {so || '.../VHIALY'})
-                </p>
-              </div>
-              <div className="flex justify-center items-center bg-slate-50 p-2 sm:p-4 border border-slate-300 rounded shadow-xs overflow-hidden">
-                <img
-                  src={pageImg}
-                  alt={`${pdf.name} trang ${pageIdx + 1}`}
-                  className="w-full h-auto max-h-[620px] object-contain rounded-xs"
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-      </>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 text-center py-8">
-        <div className="text-sm font-bold text-slate-700 animate-pulse">
-          Đang tải các trang tài liệu PDF: {pdf.name}...
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="pdf-attached-page-preview mt-10 pt-6 border-t-2 border-dashed border-slate-300 text-center py-6 bg-slate-50 rounded border border-slate-200">
-      <h3 className="font-bold text-[13pt] uppercase tracking-wide text-slate-800 mb-1">
-        PHỤ LỤC II: HỒ SƠ, TÀI LIỆU ĐÍNH KÈM
-      </h3>
-      <p className="font-bold text-[11pt] text-blue-900">{pdf.name}</p>
-      <p className="italic text-[10pt] text-slate-600 mt-1">
-        (Tài liệu định dạng PDF được lưu kèm theo Biên bản kiểm tra số: {so || '.../VHIALY'})
-      </p>
-    </div>
-  );
-};
+import { attachmentService } from '../services/attachmentService';
 
 interface DocumentA4ContentProps {
   report: ReportData;
@@ -119,10 +37,10 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
         Mẫu số PC02
       </div>
 
-      {/* Header 2 columns */}
-      <div className="grid grid-cols-2 gap-4 pb-2">
+      {/* Header 2 columns (Trái: Cơ quan ~40%, Phải: Quốc hiệu & Tiêu ngữ ~60%) */}
+      <div className="flex justify-between items-start pb-2">
         {/* Left: Organization */}
-        <div className="text-center">
+        <div className="w-[40%] text-center">
           <div className="font-bold text-[11.5pt] uppercase leading-snug">
             CÔNG TY THỦY ĐIỆN IALY
           </div>
@@ -135,14 +53,14 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
         </div>
 
         {/* Right: Country Header */}
-        <div className="text-center">
-          <div className="font-bold text-[11.5pt] uppercase leading-snug">
+        <div className="w-[60%] text-center">
+          <div className="font-bold text-[11.5pt] uppercase leading-snug whitespace-nowrap">
             CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
           </div>
-          <div className="font-bold text-[11.5pt] underline decoration-1 underline-offset-4 leading-snug">
+          <div className="font-bold text-[11.5pt] underline decoration-1 underline-offset-4 leading-snug whitespace-nowrap">
             Độc lập - Tự do - Hạnh phúc
           </div>
-          <div className="mt-2 italic text-[12pt]">
+          <div className="mt-2 italic text-[12pt] whitespace-nowrap">
             {report.place || 'Gia Lai'}, ngày {report.header_day} tháng {report.header_month} năm {report.header_year}
           </div>
         </div>
@@ -275,20 +193,18 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
           </tr>
         </thead>
         <tbody>
-          {report.fire
-            .filter((f) => f.stt !== '3' && !(f.id === 'f-3' && !f.name?.trim()))
-            .map((f) => (
-              <tr key={f.id}>
-                <td className="border border-black px-1 py-1 text-center align-top">{f.stt}</td>
-                <td className="border border-black px-2 py-1 align-top">{f.name}</td>
-                <td className="border border-black px-2 py-1 align-top whitespace-pre-line italic">
-                  {f.qty}
-                </td>
-                <td className="border border-black px-1 py-1 text-center align-top italic">{f.ok}</td>
-                <td className="border border-black px-1 py-1 text-center align-top italic">{f.bad}</td>
-                <td className="border border-black px-1.5 py-1 align-top">{f.note}</td>
-              </tr>
-            ))}
+          {report.fire.map((f) => (
+            <tr key={f.id}>
+              <td className="border border-black px-1 py-1 text-center align-top">{f.stt}</td>
+              <td className="border border-black px-2 py-1 align-top">{f.name}</td>
+              <td className="border border-black px-2 py-1 align-top whitespace-pre-line italic">
+                {f.qty}
+              </td>
+              <td className="border border-black px-1 py-1 text-center align-top italic">{f.ok}</td>
+              <td className="border border-black px-1 py-1 text-center align-top italic">{f.bad}</td>
+              <td className="border border-black px-1.5 py-1 align-top">{f.note}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
@@ -308,19 +224,14 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
           </tr>
         </thead>
         <tbody>
-          {report.escape
-            .filter((esc) => esc.stt !== '2.1' && esc.name?.trim() !== 'pháp ngăn')
-            .map((esc) => {
-              const cleanNote = esc.note?.includes('Hình ảnh minh chứng được lưu tại thư mục') ? '' : esc.note;
-              return (
-                <tr key={esc.id}>
-                  <td className="border border-black px-1 py-1 text-center">{esc.stt}</td>
-                  <td className="border border-black px-2 py-1">{esc.name}</td>
-                  <td className="border border-black px-1 py-1 text-center italic">{esc.status}</td>
-                  <td className="border border-black px-2 py-1 text-[10.5pt]">{cleanNote}</td>
-                </tr>
-              );
-            })}
+          {report.escape.map((esc) => (
+            <tr key={esc.id}>
+              <td className="border border-black px-1 py-1 text-center">{esc.stt}</td>
+              <td className="border border-black px-2 py-1">{esc.name}</td>
+              <td className="border border-black px-1 py-1 text-center italic">{esc.status}</td>
+              <td className="border border-black px-2 py-1 text-[10.5pt]">{esc.note}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
@@ -438,107 +349,102 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
         </div>
       </div>
 
-      {/* --- PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG ... (4 HÌNH / 1 TRANG) --- */}
-      {(() => {
-        const displayMonth = getReportMonthDisplay(report.report_month, report.header_month);
-        const photoChunks: InspectionPhoto[][] = [];
-        if (report.photos && report.photos.length > 0) {
-          for (let i = 0; i < report.photos.length; i += 4) {
-            photoChunks.push(report.photos.slice(i, i + 4));
-          }
-        }
+      {/* ================= PHỤ LỤC HÌNH ẢNH & TÀI LIỆU ================= */}
+      {report.attachments && report.attachments.length > 0 && (
+        <div className="mt-12 pt-8 border-t-2 border-dashed border-slate-300 print:break-before-page">
+          <div className="text-center mb-6">
+            <div className="font-bold text-[14pt] uppercase">
+              PHỤ LỤC: HÌNH ẢNH & TÀI LIỆU KIỂM TRA HIỆN TRƯỜNG
+            </div>
+            <div className="italic text-[11pt] text-slate-600">
+              (Kèm theo Biên bản tự kiểm tra PCCC&CNCH Tháng {report.report_month})
+            </div>
+          </div>
 
-        return (
-          <>
-            {photoChunks.map((chunk, chunkIdx) => (
-              <div
-                key={`photo-page-${chunkIdx}`}
-                className="mt-8 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page min-h-[1050px] flex flex-col justify-between"
-              >
-                <div>
-                  <div className="text-center mb-5">
-                    <h3 className="font-bold text-[13.5pt] uppercase tracking-wide">
-                      PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG {displayMonth}
-                    </h3>
-                    <p className="italic text-[11pt] text-slate-700 mt-1">
-                      (Kèm theo Biên bản tự kiểm tra số: {report.so || '.../VHIALY'} ngày {report.header_day} tháng {report.header_month} năm {report.header_year} của PX Vận hành Ialy)
-                    </p>
-                  </div>
-
-                  {/* 2x2 Grid: Strictly 4 photos per page */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {chunk.map((photo, pIdx) => {
-                      const globalIndex = chunkIdx * 4 + pIdx;
-                      const statusText =
-                        photo.status === 'passed'
-                          ? 'Đạt - Đảm bảo an toàn'
-                          : photo.status === 'warning'
-                          ? 'Cần lưu ý theo dõi'
-                          : 'Không đạt - Đề nghị khắc phục';
-
-                      return (
-                        <div
-                          key={photo.id}
-                          className="border border-slate-400 p-2 rounded-xs bg-white flex flex-col justify-between break-inside-avoid shadow-2xs print:shadow-none"
-                        >
-                          <div>
-                            <div className="w-full h-40 bg-slate-100 border border-slate-300 rounded-xs overflow-hidden flex items-center justify-center mb-1.5">
-                              <img
-                                src={photo.imageData}
-                                alt={photo.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="font-bold text-[11pt] text-black leading-tight mb-1">
-                              Hình {globalIndex + 1}: {photo.title}
-                            </div>
-                            <div className="text-[10pt] text-slate-800 leading-snug">
-                              <span className="font-semibold">Vị trí:</span> {photo.location}
-                            </div>
-                            <div className="text-[10pt] text-slate-800 leading-snug">
-                              <span className="font-semibold">Đánh giá:</span>{' '}
-                              <span className={photo.status === 'passed' ? 'text-emerald-800 font-semibold' : 'text-amber-800 font-semibold'}>
-                                {statusText}
-                              </span>
-                            </div>
-                            <div className="text-[9.5pt] italic text-slate-700 mt-0.5 leading-snug">
-                              <span className="font-semibold not-italic">Ghi nhận:</span> {photo.description}
-                            </div>
-                          </div>
-                          {photo.capturedAt && (
-                            <div className="text-[9pt] text-slate-500 text-right mt-1.5 border-t border-slate-200 pt-0.5">
-                              Thời điểm kiểm tra: {photo.capturedAt}
-                            </div>
-                          )}
+          {/* Image Attachments (4 images per page) */}
+          {(report.attachments || []).filter((a) => a.fileType === 'image').length > 0 && (
+            <div className="mb-8">
+              <div className="font-bold text-[12.5pt] mb-4 text-[#17365d] border-b pb-1">
+                PHỤ LỤC 1: HÌNH ẢNH THỰC TẾ CÔNG TÁC PCCC&CNCH TẠI HIỆN TRƯỜNG
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {(report.attachments || [])
+                  .filter((a) => a.fileType === 'image')
+                  .map((imgAtt, idx) => {
+                    const src = attachmentService.getAttachmentViewUrl(imgAtt);
+                    return (
+                      <div
+                        key={imgAtt.id}
+                        className="border border-slate-300 rounded p-2 bg-slate-50/50 flex flex-col justify-between text-[10.5pt]"
+                      >
+                        <div className="aspect-[4/3] bg-black/5 overflow-hidden rounded mb-1.5 flex items-center justify-center">
+                          <img
+                            src={src}
+                            alt={imgAtt.description || imgAtt.fileName}
+                            className="w-full h-full object-cover"
+                            crossOrigin="anonymous"
+                          />
                         </div>
-                      );
-                    })}
+                        <div className="text-center">
+                          <div className="font-bold text-[10.5pt]">
+                            Hình {idx + 1}: {imgAtt.description || imgAtt.fileName}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Phụ lục 2: A4 Landscape, Thụt đầu dòng, Lề: Trái 2cm, Trên/Dưới/Phải 1.5cm */}
+          {(report.attachments || []).filter((a) => a.fileType === 'pdf').length > 0 && (
+            <div className="mt-8 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page">
+              <div className="bg-white border border-slate-300 rounded-lg p-6 sm:p-8 shadow-xs">
+                <div className="text-center mb-4">
+                  <div className="font-bold text-[14pt] text-[#17365d] uppercase tracking-wide">
+                    PHỤ LỤC 2: SỔ THEO DÕI PHƯƠNG TIỆN PCCC, VĂN BẢN & SƠ ĐỒ ĐÍNH KÈM
+                  </div>
+                  <div className="text-[12pt] italic text-slate-600 mt-1">
+                    (Kèm theo Biên bản tự kiểm tra PCCC&CNCH Tháng {report.report_month})
                   </div>
                 </div>
 
-                {chunkIdx === photoChunks.length - 1 && report.attachedPdfs && report.attachedPdfs.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-slate-300 text-[10.5pt] italic text-slate-700">
-                    <span className="font-bold not-italic">Hồ sơ, sổ theo dõi kèm theo: </span>
-                    {report.attachedPdfs.map((pdf) => pdf.name).join('; ')}.
-                  </div>
-                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-black text-[11pt]">
+                    <thead>
+                      <tr className="bg-slate-100">
+                        <th className="border border-black px-2 py-2 w-12 text-center">STT</th>
+                        <th className="border border-black px-3 py-2 text-left w-[44%]">Tên tài liệu / Văn bản PDF / Sơ đồ đính kèm</th>
+                        <th className="border border-black px-3 py-2 text-left w-[26%]">Nội dung trích yếu / Mô tả</th>
+                        <th className="border border-black px-2 py-2 text-center w-[12%]">Định dạng</th>
+                        <th className="border border-black px-2 py-2 text-center w-[12%]">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.attachments || [])
+                        .filter((a) => a.fileType === 'pdf')
+                        .map((pdfAtt, pIdx) => {
+                          const desc = pdfAtt.description || 'Hồ sơ tài liệu PCCC theo quy định';
+                          const ext = pdfAtt.fileName.split('.').pop()?.toUpperCase() || 'PDF';
+                          return (
+                            <tr key={pdfAtt.id} className="hover:bg-slate-50/60">
+                              <td className="border border-black px-2 py-2 text-center">{pIdx + 1}</td>
+                              <td className="border border-black px-3 py-2 font-bold">{pdfAtt.fileName}</td>
+                              <td className="border border-black px-3 py-2 text-slate-700">{desc}</td>
+                              <td className="border border-black px-2 py-2 text-center text-slate-600">{ext}</td>
+                              <td className="border border-black px-2 py-2 text-center text-emerald-700 font-medium">Đầy đủ, rõ ràng</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            ))}
-
-            {/* --- PHỤ LỤC II: TÀI LIỆU, SỔ THEO DÕI ĐÍNH KÈM (PDF DẠNG GIẤY NGANG) --- */}
-            {report.attachedPdfs &&
-              report.attachedPdfs
-                .filter((pdf) => pdf.includedInExport !== false)
-                .map((pdf) => (
-                  <PdfDocumentRenderer
-                    key={`pdf-doc-${pdf.id}`}
-                    pdf={pdf}
-                    so={report.so}
-                  />
-                ))}
-          </>
-        );
-      })()}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

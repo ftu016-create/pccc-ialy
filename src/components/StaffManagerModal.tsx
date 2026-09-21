@@ -53,7 +53,7 @@ export const StaffManagerModal: React.FC<StaffManagerModalProps> = ({ onClose, o
 
         <div className="p-5 max-h-[65vh] overflow-y-auto space-y-4">
           <p className="text-xs text-slate-500">
-            Danh sách đoàn kiểm tra thường trực dùng để điền nhanh thành phần tham gia ("Chúng tôi gồm") và người ký biên bản.
+            Danh sách đoàn kiểm tra thường trực dùng để điền nhanh thành phần tham gia và người ký biên bản.
           </p>
 
           {/* Add new */}
