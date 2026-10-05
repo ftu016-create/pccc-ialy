@@ -199,6 +199,57 @@ export async function handleApiRequest(
     return;
   }
 
+  // 6. GET /api/fetch-sheet?url=...
+  if (pathname === '/api/fetch-sheet' && req.method === 'GET') {
+    const sheetUrl = urlObj.searchParams.get('url');
+    if (!sheetUrl) {
+      sendJson(res, 400, { success: false, message: 'Missing url parameter' });
+      return;
+    }
+
+    try {
+      const idMatch = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (!idMatch || !idMatch[1]) {
+        sendJson(res, 400, { success: false, message: 'Invalid Google Sheet URL' });
+        return;
+      }
+      const sheetId = idMatch[1];
+      const gidMatch = sheetUrl.match(/[?&#]gid=([0-9]+)/);
+      const gid = gidMatch && gidMatch[1] ? gidMatch[1] : null;
+      const gidParam = gid ? `&gid=${gid}` : '';
+
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}`;
+      const response = await fetch(csvUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+        },
+      });
+
+      if (!response.ok) {
+        // Fallback to gviz
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv${gidParam}`;
+        const gvizRes = await fetch(gvizUrl);
+        if (gvizRes.ok) {
+          const gvizText = await gvizRes.text();
+          sendJson(res, 200, { success: true, csvText: gvizText });
+          return;
+        }
+        sendJson(res, response.status, {
+          success: false,
+          message: 'Google Sheet returned status ' + response.status + '. Sheet may be private.',
+        });
+        return;
+      }
+
+      const csvText = await response.text();
+      sendJson(res, 200, { success: true, csvText });
+      return;
+    } catch (err: any) {
+      sendJson(res, 500, { success: false, message: err?.message || 'Error fetching sheet' });
+      return;
+    }
+  }
+
   // Fallback for unmatched /api
   sendJson(res, 404, { success: false, message: 'Endpoint not found' });
 }
