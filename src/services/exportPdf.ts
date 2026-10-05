@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import saveAs from 'file-saver';
 import { ReportData } from '../types';
 import { pdfMergeService } from './pdfMergeService';
@@ -17,9 +17,16 @@ export async function exportElementToPdf(
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     logging: false,
     backgroundColor: '#ffffff',
     windowWidth: 1200,
+    onclone: (_clonedDoc, clonedElement) => {
+      if (clonedElement) {
+        clonedElement.style.transform = 'none';
+        clonedElement.style.margin = '0 auto';
+      }
+    },
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 0.95);

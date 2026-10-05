@@ -9,7 +9,6 @@ import {
   Copy,
   Search,
   PlusCircle,
-  FileSpreadsheet,
   Upload,
   AlertCircle,
   Eye,
@@ -46,7 +45,6 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
   onOpenAdminLogin,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const filtered = reports.filter((r) => {
@@ -61,7 +59,6 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
 
   const handleDelete = (id: string) => {
     storageService.deleteReport(id);
-    setDeleteConfirmId(null);
     onRefresh();
   };
 
@@ -246,13 +243,6 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                               <span>{item.attachedPdfs.length} file PDF</span>
                             </span>
                           )}
-
-                          {item.google_sheet_url && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-md">
-                              <FileSpreadsheet className="w-3 h-3 text-teal-600" />
-                              <span>Google Sheet</span>
-                            </span>
-                          )}
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-xs text-slate-500">
@@ -326,31 +316,13 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
 
                           {/* Xóa báo cáo: Chỉ cho Admin */}
                           {userRole === 'admin' && (
-                            deleteConfirmId === item.id ? (
-                              <div className="flex items-center gap-1 bg-rose-50 border border-rose-300 p-1 rounded">
-                                <span className="text-[11px] text-rose-700 font-bold">Xóa?</span>
-                                <button
-                                  onClick={() => handleDelete(item.id)}
-                                  className="px-2 py-0.5 bg-rose-600 text-white text-xs rounded hover:bg-rose-700 font-bold cursor-pointer"
-                                >
-                                  Có
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirmId(null)}
-                                  className="px-2 py-0.5 bg-slate-300 text-slate-800 text-xs rounded hover:bg-slate-400 cursor-pointer"
-                                >
-                                  Không
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setDeleteConfirmId(item.id)}
-                                className="px-2 py-1.5 bg-[#dc4c4c] hover:bg-[#c62828] text-white rounded text-xs font-semibold shadow-2xs cursor-pointer"
-                                title="Xóa báo cáo"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="px-2 py-1.5 bg-[#dc4c4c] hover:bg-[#c62828] text-white rounded text-xs font-semibold shadow-2xs cursor-pointer"
+                              title="Xóa biên bản này ngay lập tức"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           )}
                         </div>
                       </td>

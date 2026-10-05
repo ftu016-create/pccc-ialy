@@ -438,70 +438,6 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
         </div>
       </div>
 
-      {/* --- MỤC LIÊN KẾT GOOGLE SHEETS & BẢNG DỮ LIỆU ĐÍNH KÈM --- */}
-      {report.google_sheet_url && (
-        <div className="mt-8 pt-6 border-t-2 border-dashed border-slate-300 print:break-before-page break-before-page">
-          <div className="text-center mb-4">
-            <h3 className="font-bold text-[13.5pt] uppercase tracking-wide">
-              HỒ SƠ, BẢNG TÍNH KIỂM TRA ĐỊNH KỲ TỪ GOOGLE SHEETS
-            </h3>
-            <p className="italic text-[11pt] text-slate-700 mt-1">
-              (Kèm theo Biên bản tự kiểm tra số: {report.so || '.../VHIALY'} ngày {report.header_day} tháng {report.header_month} năm {report.header_year} của PX Vận hành Ialy)
-            </p>
-          </div>
-
-          <div className="text-[12pt] space-y-1 mb-4 bg-slate-50 p-3 rounded border border-slate-300">
-            <div>
-              <span className="font-bold">1. Bảng tính theo dõi: </span>
-              <span>{report.google_sheet_title || 'Bảng kiểm tra định kỳ chi tiết thiết bị PCCC'}</span>
-            </div>
-            <div>
-              <span className="font-bold">2. Đường link truy cập trực tuyến: </span>
-              <a
-                href={report.google_sheet_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-700 underline break-all font-mono text-[11pt]"
-              >
-                {report.google_sheet_url}
-              </a>
-            </div>
-          </div>
-
-          {report.google_sheet_data?.rows && report.google_sheet_data.rows.length > 0 && (
-            <div className="overflow-x-auto mb-2">
-              <table className="w-full border-collapse border border-black text-[10.5pt]">
-                <thead>
-                  <tr className="bg-slate-100 font-bold">
-                    <th className="border border-black px-2 py-1 w-12 text-center">STT</th>
-                    {report.google_sheet_data.headers.slice(0, 6).map((h, i) => (
-                      <th key={`th-print-${i}`} className="border border-black px-2 py-1 text-center">
-                        {h || `Cột ${i + 1}`}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.google_sheet_data.rows.slice(0, 50).map((row, rIdx) => (
-                    <tr key={`tr-print-${rIdx}`}>
-                      <td className="border border-black px-2 py-1 text-center font-mono">{rIdx + 1}</td>
-                      {row.slice(0, 6).map((cell, cIdx) => (
-                        <td key={`td-print-${rIdx}-${cIdx}`} className="border border-black px-2 py-1">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="text-[10pt] italic text-slate-600 mt-2">
-                (Hiển thị {Math.min(report.google_sheet_data.rows.length, 50)} dòng dữ liệu từ Google Sheets. Toàn bộ hình ảnh minh chứng tương ứng được kết nối tại Phụ lục I ngay bên dưới).
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* --- PHỤ LỤC I: HÌNH ẢNH THOÁT NẠN THÁNG ... (4 HÌNH / 1 TRANG) --- */}
       {(() => {
         const displayMonth = getReportMonthDisplay(report.report_month, report.header_month);
@@ -565,12 +501,6 @@ export const DocumentA4Content: React.FC<DocumentA4ContentProps> = ({
                                 {statusText}
                               </span>
                             </div>
-                            {photo.linked_sheet_item && (
-                              <div className="text-[9.5pt] text-emerald-800 font-semibold mt-0.5 leading-snug">
-                                <span>Nối Google Sheet:</span>{' '}
-                                <span className="font-normal italic text-slate-800">{photo.linked_sheet_item}</span>
-                              </div>
-                            )}
                             <div className="text-[9.5pt] italic text-slate-700 mt-0.5 leading-snug">
                               <span className="font-semibold not-italic">Ghi nhận:</span> {photo.description}
                             </div>

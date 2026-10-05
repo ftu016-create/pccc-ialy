@@ -12,6 +12,7 @@ interface ReportDetailViewProps {
   onPrint: () => void;
   userRole?: UserRole;
   onOpenAdminLogin?: () => void;
+  onUpdateReport?: (updated: ReportData) => void;
 }
 
 export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
@@ -22,6 +23,7 @@ export const ReportDetailView: React.FC<ReportDetailViewProps> = ({
   onPrint,
   userRole = 'viewer',
   onOpenAdminLogin,
+  onUpdateReport,
 }) => {
   const [zoom, setZoom] = useState<number>(100);
   const [isExportingPdf, setIsExportingPdf] = useState(false);

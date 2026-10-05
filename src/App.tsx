@@ -54,7 +54,6 @@ export default function App() {
           if (
             foundPdfs > prevPdfs ||
             foundPhotos > prevPhotos ||
-            (!prev.google_sheet_url && found.google_sheet_url) ||
             found.updated_at > prev.updated_at
           ) {
             return found;
@@ -121,10 +120,7 @@ export default function App() {
     }
 
     if (isDirty) {
-      const confirmLeave = window.confirm(
-        'Bạn có thay đổi chưa lưu. Bạn có chắc muốn tạo báo cáo mới?'
-      );
-      if (!confirmLeave) return;
+      storageService.saveReport(currentReport);
     }
 
     const newRep = createNewReport({
@@ -137,10 +133,7 @@ export default function App() {
 
   const handleSelectReport = (report: ReportData) => {
     if (isDirty && report.id !== currentReport.id) {
-      const confirmLeave = window.confirm(
-        'Bạn có thay đổi chưa lưu trên báo cáo hiện tại. Tiếp tục mở báo cáo này?'
-      );
-      if (!confirmLeave) return;
+      storageService.saveReport(currentReport);
     }
     const full = storageService.getReportById(report.id) || report;
     setCurrentReport(full);

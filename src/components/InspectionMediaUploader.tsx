@@ -38,9 +38,6 @@ export const InspectionMediaUploader: React.FC<InspectionMediaUploaderProps> = (
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  // Deletion confirmation state
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
   // Filtering state
   const [filterType, setFilterType] = useState<'all' | 'image' | 'pdf'>('all');
   const [filterPlant, setFilterPlant] = useState<'all' | 'ialy' | 'ialy_mr'>('all');
@@ -107,7 +104,6 @@ export const InspectionMediaUploader: React.FC<InspectionMediaUploaderProps> = (
 
   const handleDelete = async (attId: string) => {
     if (!canEdit) return;
-    setConfirmDeleteId(null);
 
     const res = await attachmentService.deleteAttachment(report.id, attId);
     if (res.success) {
@@ -449,40 +445,20 @@ export const InspectionMediaUploader: React.FC<InspectionMediaUploaderProps> = (
                     {/* Footer Actions */}
                     <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                       <span className="text-[11px] text-slate-400">
-                        {Math.round(att.fileSize / 1024)} KB
+                        {Math.round((att.fileSize || att.sizeBytes || 0) / 1024)} KB
                       </span>
 
                       <div className="flex items-center gap-1.5">
                         {/* Delete Button */}
                         {canEdit && (
-                          confirmDeleteId === att.id ? (
-                            <div className="flex items-center gap-1 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
-                              <span className="text-[10px] text-rose-700 font-semibold">Xóa?</span>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(att.id)}
-                                className="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded hover:bg-rose-700 font-bold"
-                              >
-                                Có
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeleteId(null)}
-                                className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-300"
-                              >
-                                Hủy
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(att.id)}
-                              className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
-                              title="Xóa tệp"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(att.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                            title="Xóa tệp ngay lập tức"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         )}
                       </div>
                     </div>

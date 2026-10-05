@@ -19,7 +19,6 @@ import { DEFAULT_STAFF_DIRECTORY } from '../data/defaultData';
 import { getSignatureForPerson } from '../data/sampleSignatures';
 import { SignatureModal } from './SignatureModal';
 import { PhotoAnnexManager } from './PhotoAnnexManager';
-import { GoogleSheetSyncCard } from './GoogleSheetSyncCard';
 import { Lock } from 'lucide-react';
 
 interface ReportFormProps {
@@ -1071,10 +1070,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
         </div>
       </div>
 
-      {/* --- MỤC III. LIÊN KẾT BẢNG KIỂM TRA GOOGLE SHEETS --- */}
-      <GoogleSheetSyncCard report={data} onChange={onChange} onSave={onSave} />
-
-      {/* --- MỤC IV. PHỤ LỤC HÌNH ẢNH HIỆN TRƯỜNG & HỒ SƠ ĐÍNH KÈM --- */}
+      {/* --- MỤC III. PHỤ LỤC HÌNH ẢNH HIỆN TRƯỜNG & HỒ SƠ ĐÍNH KÈM --- */}
       <PhotoAnnexManager report={data} onChange={onChange} />
 
       {/* Signature Modal */}

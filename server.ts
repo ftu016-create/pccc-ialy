@@ -446,6 +446,10 @@ async function startServer() {
     const attachment = (report.attachments || []).find((a) => a.id === attachmentId);
     if (!attachment) return res.status(404).send('Không tìm thấy tệp đính kèm');
 
+    if (!attachment.storagePath) {
+      return res.status(404).send('Tệp không có đường dẫn lưu trữ trên máy chủ');
+    }
+
     const absPath = path.resolve(DATA_DIR, attachment.storagePath);
     if (!fs.existsSync(absPath)) {
       return res.status(404).send('Tệp không tồn tại trên máy chủ');
@@ -463,6 +467,10 @@ async function startServer() {
 
     const attachment = (report.attachments || []).find((a) => a.id === attachmentId);
     if (!attachment) return res.status(404).send('Không tìm thấy tệp đính kèm');
+
+    if (!attachment.storagePath) {
+      return res.status(404).send('Tệp không có đường dẫn lưu trữ trên máy chủ');
+    }
 
     const absPath = path.resolve(DATA_DIR, attachment.storagePath);
     if (!fs.existsSync(absPath)) {
@@ -530,8 +538,10 @@ async function startServer() {
 
     // Delete file from disk
     try {
-      const absPath = path.resolve(DATA_DIR, target.storagePath);
-      if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+      if (target.storagePath) {
+        const absPath = path.resolve(DATA_DIR, target.storagePath);
+        if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+      }
     } catch (e) {
       console.error('Error unlinking file:', e);
     }
@@ -556,7 +566,7 @@ async function startServer() {
         const reports = getAllReports();
         const report = reports.find((r) => r.id === reportId);
         const att = (report?.attachments || []).find((a) => a.id === attachmentId);
-        if (att) {
+        if (att && att.storagePath) {
           const absPath = path.resolve(DATA_DIR, att.storagePath);
           if (fs.existsSync(absPath)) {
             const buffer = fs.readFileSync(absPath);

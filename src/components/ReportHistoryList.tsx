@@ -53,7 +53,6 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
   onShowToast,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [reportToDelete, setReportToDelete] = useState<ReportData | null>(null);
 
   const handleExportBackup = () => {
     try {
@@ -341,9 +340,9 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
                       {reports.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => setReportToDelete(report)}
+                          onClick={() => onDeleteReport(report.id)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                          title="Xóa biên bản này"
+                          title="Xóa biên bản này ngay lập tức"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -354,47 +353,6 @@ export const ReportHistoryList: React.FC<ReportHistoryListProps> = ({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* In-app Confirmation Modal for deleting report */}
-      {reportToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center gap-3 text-rose-600 mb-3">
-              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-5 h-5 text-rose-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Xác nhận xóa biên bản</h3>
-                <p className="text-xs text-slate-500">Hành động này không thể hoàn tác</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-600 mb-5">
-              Bạn có chắc chắn muốn xóa biên bản <strong>Tháng {reportToDelete.report_month}</strong> (Số: {reportToDelete.so || 'Chưa có số'})? Toàn bộ dữ liệu của biên bản này sẽ bị xóa khỏi hệ thống.
-            </p>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setReportToDelete(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onDeleteReport(reportToDelete.id);
-                  setReportToDelete(null);
-                }}
-                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition shadow-sm cursor-pointer"
-              >
-                Xóa vĩnh viễn
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

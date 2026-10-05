@@ -893,18 +893,6 @@ export async function exportReportToDocx(rawReport: ReportData) {
           })
         );
 
-        if (p1.linked_sheet_item) {
-          p1Children.push(
-            new Paragraph({
-              spacing: { before: 15, after: 15 },
-              children: [
-                new TextRun({ text: 'Nối Google Sheet: ', bold: true, color: '15803D', font: FONT_NAME, size: SIZE_SUB }),
-                new TextRun({ text: p1.linked_sheet_item, italics: true, color: '166534', font: FONT_NAME, size: SIZE_SUB }),
-              ],
-            })
-          );
-        }
-
         p1Children.push(
           new Paragraph({
             spacing: { before: 15, after: 30 },
@@ -977,18 +965,6 @@ export async function exportReportToDocx(rawReport: ReportData) {
             })
           );
 
-          if (p2.linked_sheet_item) {
-            p2Children.push(
-              new Paragraph({
-                spacing: { before: 15, after: 15 },
-                children: [
-                  new TextRun({ text: 'Nối Google Sheet: ', bold: true, color: '15803D', font: FONT_NAME, size: SIZE_SUB }),
-                  new TextRun({ text: p2.linked_sheet_item, italics: true, color: '166534', font: FONT_NAME, size: SIZE_SUB }),
-                ],
-              })
-            );
-          }
-
           p2Children.push(
             new Paragraph({
               spacing: { before: 15, after: 30 },
@@ -1046,172 +1022,6 @@ export async function exportReportToDocx(rawReport: ReportData) {
               italics: true,
               font: FONT_NAME,
               size: SIZE_MAIN,
-            }),
-          ],
-        })
-      );
-    }
-  }
-
-  // --- LIÊN KẾT & BẢNG THEO DÕI TỪ GOOGLE SHEETS ---
-  const googleSheetElements: (Paragraph | Table)[] = [];
-  if (report.google_sheet_url) {
-    googleSheetElements.push(
-      new Paragraph({
-        pageBreakBefore: true,
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 180, after: 40 },
-        children: [
-          new TextRun({
-            text: 'HỒ SƠ, BẢNG TÍNH KIỂM TRA ĐỊNH KỲ TỪ GOOGLE SHEETS',
-            bold: true,
-            font: FONT_NAME,
-            size: SIZE_TITLE,
-          }),
-        ],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { before: 20, after: 80 },
-        children: [
-          new TextRun({
-            text: `(Kèm theo Biên bản tự kiểm tra số: ${report.so || '.../VHIALY'} ngày ${report.header_day} tháng ${report.header_month} năm ${report.header_year} của PX Vận hành Ialy)`,
-            italics: true,
-            font: FONT_NAME,
-            size: SIZE_MAIN,
-          }),
-        ],
-      }),
-      new Paragraph({
-        spacing: { before: 80, after: 40 },
-        children: [
-          new TextRun({
-            text: '1. Tên bảng tính theo dõi: ',
-            bold: true,
-            font: FONT_NAME,
-            size: SIZE_MAIN,
-          }),
-          new TextRun({
-            text: report.google_sheet_title || 'Bảng kiểm tra định kỳ chi tiết thiết bị PCCC',
-            font: FONT_NAME,
-            size: SIZE_MAIN,
-          }),
-        ],
-      }),
-      new Paragraph({
-        spacing: { before: 40, after: 100 },
-        children: [
-          new TextRun({
-            text: '2. Đường link truy cập trực tuyến: ',
-            bold: true,
-            font: FONT_NAME,
-            size: SIZE_MAIN,
-          }),
-          new TextRun({
-            text: report.google_sheet_url,
-            color: '0563C1',
-            underline: {},
-            font: FONT_NAME,
-            size: SIZE_MAIN,
-          }),
-        ],
-      })
-    );
-
-    if (
-      report.google_sheet_data &&
-      Array.isArray(report.google_sheet_data.rows) &&
-      report.google_sheet_data.rows.length > 0
-    ) {
-      const headers = (report.google_sheet_data.headers || []).slice(0, 6);
-      const rows = report.google_sheet_data.rows.slice(0, 80);
-
-      const tableRows: TableRow[] = [];
-
-      // Header row
-      const headerCells: TableCell[] = [
-        new TableCell({
-          width: { size: 8, type: WidthType.PERCENTAGE },
-          borders: cellAllBorders,
-          margins: tableCellPadding,
-          children: [
-            new Paragraph({
-              alignment: AlignmentType.CENTER,
-              children: [new TextRun({ text: 'STT', bold: true, font: FONT_NAME, size: SIZE_SUB })],
-            }),
-          ],
-        }),
-      ];
-
-      const colWidthPercent = Math.floor(92 / Math.max(headers.length, 1));
-      headers.forEach((h, hIdx) => {
-        headerCells.push(
-          new TableCell({
-            width: { size: colWidthPercent, type: WidthType.PERCENTAGE },
-            borders: cellAllBorders,
-            margins: tableCellPadding,
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [
-                  new TextRun({ text: h || `Cột ${hIdx + 1}`, bold: true, font: FONT_NAME, size: SIZE_SUB }),
-                ],
-              }),
-            ],
-          })
-        );
-      });
-
-      tableRows.push(new TableRow({ tableHeader: true, cantSplit: true, children: headerCells }));
-
-      // Data rows
-      rows.forEach((row, rIdx) => {
-        const rowCells: TableCell[] = [
-          new TableCell({
-            width: { size: 8, type: WidthType.PERCENTAGE },
-            borders: cellAllBorders,
-            margins: tableCellPadding,
-            children: [
-              new Paragraph({
-                alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: String(rIdx + 1), font: FONT_NAME, size: SIZE_SUB })],
-              }),
-            ],
-          }),
-        ];
-
-        headers.forEach((_, colIdx) => {
-          rowCells.push(
-            new TableCell({
-              width: { size: colWidthPercent, type: WidthType.PERCENTAGE },
-              borders: cellAllBorders,
-              margins: tableCellPadding,
-              children: [
-                new Paragraph({
-                  children: [new TextRun({ text: row[colIdx] || '', font: FONT_NAME, size: SIZE_SUB })],
-                }),
-              ],
-            })
-          );
-        });
-
-        tableRows.push(new TableRow({ cantSplit: true, children: rowCells }));
-      });
-
-      googleSheetElements.push(
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          borders: cellAllBorders,
-          rows: tableRows,
-        }),
-        new Paragraph({
-          spacing: { before: 60, after: 120 },
-          children: [
-            new TextRun({
-              text: `(Bảng trên trích xuất ${rows.length} dòng dữ liệu từ Google Sheets. Toàn bộ hình ảnh kiểm tra minh chứng tương ứng được kết nối tại Phụ lục I ngay bên dưới).`,
-              italics: true,
-              font: FONT_NAME,
-              size: SIZE_SUB,
             }),
           ],
         })
@@ -1526,7 +1336,6 @@ export async function exportReportToDocx(rawReport: ReportData) {
             children: [new TextRun({ text: 'Các thành viên kiểm tra:', bold: true, font: FONT_NAME, size: SIZE_MAIN })],
           }),
           fullSignTable,
-          ...googleSheetElements,
           ...photoAppendixElements,
         ],
       },

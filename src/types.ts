@@ -47,7 +47,45 @@ export interface InspectionPhoto {
   status: 'passed' | 'warning' | 'failed';
   imageData: string;
   filename?: string;
-  linked_sheet_item?: string; // Tên dòng/thiết bị nối từ trang Google Sheet
+}
+
+export interface AiInspectionAnalysis {
+  status?: 'passed' | 'failed' | 'warning' | string;
+  detectedItems?: string[];
+  complianceStatus?: 'pass' | 'fail' | 'warning' | string;
+  findings?: string;
+  recommendation?: string;
+  observedConditions?: string;
+  potentialAnomalies?: string;
+  pointsToCheck?: string;
+  description?: string;
+  analyzedAt?: string;
+}
+
+export interface AttachmentItem {
+  id: string;
+  reportId?: string;
+  fileName: string;
+  originalName?: string;
+  fileType: 'image' | 'pdf' | 'docx' | string;
+  fileSize?: number;
+  sizeBytes?: number;
+  mimeType?: string;
+  url?: string;
+  thumbnailUrl?: string;
+  storagePath?: string;
+  filePath?: string;
+  targetType?: 'inspection_finding' | 'general' | 'equipment' | 'general_area' | string;
+  targetItemId?: string;
+  targetCategory?: string;
+  plant?: 'ialy' | 'ialy_mr';
+  locationDescription?: string;
+  description?: string;
+  uploadedBy?: string;
+  createdAt?: string;
+  uploadedAt?: string;
+  dataUrl?: string;
+  aiAnalysis?: AiInspectionAnalysis;
 }
 
 export interface AttachedDocument {
@@ -105,17 +143,8 @@ export interface ReportData {
   // 7. Phụ lục hình ảnh hiện trường & Tài liệu đính kèm
   photos?: InspectionPhoto[];
   attachedPdfs?: AttachedDocument[];
-
-  // 8. Bảng tính kiểm tra chi tiết từ Google Sheets
-  google_sheet_url?: string;
-  google_sheet_title?: string;
-  google_sheet_data?: {
-    sheetName?: string;
-    headers: string[];
-    rows: string[][];
-    totalRows?: number;
-    lastSyncedAt?: string;
-  };
+  attachments?: AttachmentItem[];
+  status?: 'draft' | 'in_progress' | 'completed' | string;
   
   // Kết thúc & người ký
   end_h: string;

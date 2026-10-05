@@ -98,9 +98,6 @@ async function initAsyncStorage() {
           ...rep,
           photos: idbPhotosCount >= existingPhotosCount ? rep.photos : existing?.photos,
           attachedPdfs: idbPdfsCount >= existingPdfsCount ? rep.attachedPdfs : existing?.attachedPdfs,
-          google_sheet_url: rep.google_sheet_url || existing?.google_sheet_url,
-          google_sheet_title: rep.google_sheet_title || existing?.google_sheet_title,
-          google_sheet_data: rep.google_sheet_data || existing?.google_sheet_data,
         };
         memoryReportsCache.set(rep.id, sanitizeReport(merged));
         hasNewData = true;
@@ -345,10 +342,12 @@ export const storageService = {
     return JSON.stringify({ reports, staff, exported_at: new Date().toISOString() }, null, 2);
   },
 
-  importBackupJson(jsonStr: string): boolean {
+  importBackupJson(jsonStr: string): { success: boolean; reports?: ReportData[]; message?: string } {
     try {
       const parsed = JSON.parse(jsonStr);
+      let importedReports: ReportData[] = [];
       if (Array.isArray(parsed.reports)) {
+        importedReports = parsed.reports;
         parsed.reports.forEach((rep: ReportData) => {
           memoryReportsCache.set(rep.id, sanitizeReport(rep));
         });
@@ -364,10 +363,14 @@ export const storageService = {
       }
       this.syncToServer();
       notifyListeners();
-      return true;
+      return {
+        success: true,
+        reports: importedReports,
+        message: `Đã khôi phục thành công ${importedReports.length} biên bản!`,
+      };
     } catch (e) {
       console.error('Import failed', e);
-      return false;
+      return { success: false, message: 'Tệp sao lưu không hợp lệ hoặc bị lỗi định dạng JSON.' };
     }
   },
 };
