@@ -43,12 +43,12 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ report, on
         <div className="flex items-center gap-2">
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại</span>
+            <span>Đóng</span>
           </button>
-          <span className="font-bold text-sm hidden sm:inline ml-2 text-blue-100">
+          <span className="font-bold text-xs sm:text-sm hidden sm:inline ml-2 text-blue-100">
             Xem trước văn bản Mẫu PC02
           </span>
         </div>
@@ -59,38 +59,39 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({ report, on
             type="button"
             onClick={handleDownloadPdf}
             disabled={isExportingPdf}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded text-sm font-semibold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
-            title="Tải trực tiếp file PDF về máy tính"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+            title="Tải file PDF"
           >
             {isExportingPdf ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3.5 h-3.5" />
             )}
-            <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Tải file PDF'}</span>
+            <span>{isExportingPdf ? 'Tạo PDF...' : 'Tải PDF'}</span>
           </button>
 
           <button
             onClick={handleExportWord}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#218838] hover:bg-[#1e7e34] text-white rounded text-sm font-semibold shadow-sm transition-colors"
-            title="Tải văn bản Word (.docx)"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+            title="Xuất file Word"
           >
-            <Download className="w-4 h-4" />
-            <span>Tải Word (.docx)</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Xuất Word</span>
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-semibold shadow-sm transition-colors"
-            title="In qua hộp thoại máy in hoặc lưu PDF hệ điều hành"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-white text-slate-800 rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+            title="In văn bản"
           >
-            <Printer className="w-4 h-4" />
-            <span>In ấn</span>
+            <Printer className="w-3.5 h-3.5" />
+            <span>In</span>
           </button>
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-300 hover:text-white rounded hover:bg-slate-700/60"
+            className="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-700/60 cursor-pointer"
+            title="Đóng cửa sổ"
           >
             <X className="w-5 h-5" />
           </button>

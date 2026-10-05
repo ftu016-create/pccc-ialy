@@ -323,25 +323,22 @@ export const PhotoAnnexManager: React.FC<PhotoAnnexManagerProps> = ({
             <UploadCloud className="w-5 h-5" />
           </div>
           <div className="text-sm font-semibold text-slate-800">
-            Kéo thả ảnh hiện trường (.jpg, .png) hoặc file PDF sổ theo dõi vào đây
+            Kéo thả ảnh hiện trường (.jpg, .png) hoặc file PDF vào đây
           </div>
-          <p className="text-xs text-slate-500 max-w-xl">
-            Tự động lấy tên file ảnh làm tiêu đề minh chứng, tự động nhận diện vị trí và điền đánh giá chuẩn xác.
-          </p>
           <div className="flex items-center gap-3 mt-1">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-emerald-700 shadow-2xs transition"
+              className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-emerald-700 shadow-2xs transition cursor-pointer"
             >
-              Chọn ảnh từ máy
+              Chọn ảnh
             </button>
             <button
               type="button"
               onClick={() => pdfInputRef.current?.click()}
-              className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-blue-700 shadow-2xs transition"
+              className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-semibold text-blue-700 shadow-2xs transition cursor-pointer"
             >
-              Chọn file PDF sổ theo dõi
+              Chọn file PDF
             </button>
           </div>
         </div>

@@ -90,26 +90,26 @@ export const Topbar: React.FC<TopbarProps> = ({
                   Đang lưu...
                 </span>
               ) : isDirty ? (
-                <span className="inline-flex items-center gap-1 text-amber-600">
+                <span className="inline-flex items-center gap-1.5 text-amber-600 font-semibold">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                  Chưa lưu thay đổi
+                  Chưa lưu
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-emerald-600">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Đã lưu an toàn
+                  Đã lưu
                 </span>
               )}
             </div>
 
-            {/* Save Button (when in form mode and user is Admin) */}
+            {/* Save Button */}
             {currentView === 'form' && userRole === 'admin' && (
               <button
                 type="button"
                 id="btn-save-report"
                 onClick={onSaveReport}
                 disabled={isSaving}
-                title="Lưu dữ liệu biên bản hiện tại vào bộ nhớ"
+                title="Lưu biên bản"
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition whitespace-nowrap border cursor-pointer ${
                   isDirty
                     ? 'text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-300 ring-2 ring-blue-500/20 shadow-xs'
@@ -121,11 +121,11 @@ export const Topbar: React.FC<TopbarProps> = ({
                 ) : (
                   <Save className={`w-3.5 h-3.5 ${isDirty ? 'text-blue-600' : 'text-slate-600'}`} />
                 )}
-                <span>{isSaving ? 'Đang lưu...' : isDirty ? 'Lưu ngay*' : 'Lưu'}</span>
+                <span>{isSaving ? 'Đang lưu...' : 'Lưu'}</span>
               </button>
             )}
 
-            {/* Admin / Colleague (Chỉ xem) Role Badge & Login */}
+            {/* Admin / Colleague Role Badge */}
             {userRole === 'admin' ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-300 rounded-xl text-xs font-bold text-emerald-800 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -134,7 +134,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                   <button
                     type="button"
                     onClick={onChangePin}
-                    title="Đổi mã PIN Quản trị viên (sẽ tự động đồng bộ sang máy khác)"
+                    title="Đổi mã PIN"
                     className="ml-1 px-1.5 py-0.5 rounded text-[11px] bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 font-semibold cursor-pointer transition"
                   >
                     Đổi PIN
@@ -143,7 +143,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <button
                   type="button"
                   onClick={onAdminLogout}
-                  title="Thoát quyền Admin (chuyển sang chế độ Đồng nghiệp - chỉ xem)"
+                  title="Thoát quyền Admin"
                   className="px-1.5 py-0.5 rounded text-[11px] bg-white border border-emerald-300 text-slate-600 hover:text-rose-600 font-semibold cursor-pointer transition"
                 >
                   Thoát
@@ -154,7 +154,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 type="button"
                 id="btn-admin-login"
                 onClick={onOpenAdminLogin}
-                title="Đăng nhập Quản trị viên bằng mã PIN để soạn thảo và chỉnh sửa biên bản"
+                title="Đăng nhập Quản trị viên"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer shadow-2xs"
               >
                 <Lock className="w-3.5 h-3.5 text-blue-600" />
@@ -162,14 +162,14 @@ export const Topbar: React.FC<TopbarProps> = ({
               </button>
             )}
 
-            {/* Tải file PDF trực tiếp (Chỉ khi là Admin hoặc đang ở màn hình xem chi tiết) */}
+            {/* Tải PDF */}
             {userRole === 'admin' && onExportPdf && (
               <button
                 type="button"
                 id="btn-download-pdf"
                 onClick={onExportPdf}
                 disabled={isExportingPdf}
-                title={`Tải trực tiếp file PDF (khổ A4) cho biên bản Tháng ${currentReport.report_month}`}
+                title={`Tải file PDF Tháng ${currentReport.report_month}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl shadow-xs transition whitespace-nowrap cursor-pointer disabled:opacity-50"
               >
                 {isExportingPdf ? (
@@ -177,17 +177,17 @@ export const Topbar: React.FC<TopbarProps> = ({
                 ) : (
                   <FileText className="w-3.5 h-3.5" />
                 )}
-                <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Tải file PDF'}</span>
+                <span>{isExportingPdf ? 'Tạo PDF...' : 'Tải PDF'}</span>
               </button>
             )}
 
-            {/* Xuất Word (.docx) */}
+            {/* Xuất Word */}
             {userRole === 'admin' && (
               <button
                 type="button"
                 id="btn-export-word"
                 onClick={onExportWord}
-                title={`Xuất file Word (.docx) chuẩn Nghị định 30 cho Tháng ${currentReport.report_month}`}
+                title={`Xuất file Word Tháng ${currentReport.report_month}`}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-sm shadow-blue-500/25 transition whitespace-nowrap cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -195,13 +195,13 @@ export const Topbar: React.FC<TopbarProps> = ({
               </button>
             )}
 
-            {/* In / Xem trước A4 */}
+            {/* In ấn */}
             {userRole === 'admin' && (
               <button
                 type="button"
                 id="btn-print-pdf"
                 onClick={onPreviewPrint}
-                title={`In hoặc xem trước văn bản khổ A4 Tháng ${currentReport.report_month}`}
+                title="In văn bản A4"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition whitespace-nowrap cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-600" />
@@ -213,41 +213,28 @@ export const Topbar: React.FC<TopbarProps> = ({
 
         {/* Tier 2: View Switcher (Tabs) & Supporting Tools */}
         <div className="flex items-center justify-between py-2 gap-3 flex-wrap">
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs - luôn hiển thị 3 tab nhất quán */}
           <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 shrink-0">
-            {currentView === 'form' && (
-              <button
-                type="button"
-                id="tab-view-form"
-                onClick={() => onNavigate('form')}
-                title="Đang trong giao diện sửa biểu mẫu"
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-amber-700 shadow-xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                <span>Sửa biểu mẫu</span>
-              </button>
-            )}
-
             <button
               type="button"
-              id="tab-view-history"
-              onClick={() => onNavigate('history')}
-              title="Xem danh sách tất cả các biên bản theo từng tháng"
+              id="tab-view-form"
+              onClick={() => onNavigate('form')}
+              title="Soạn thảo biểu mẫu biên bản"
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                currentView === 'history'
+                currentView === 'form'
                   ? 'bg-white text-blue-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <History className="w-3.5 h-3.5 text-blue-600" />
-              <span>Lịch sử các tháng</span>
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Biểu mẫu</span>
             </button>
 
             <button
               type="button"
               id="tab-view-preview"
               onClick={() => onNavigate('preview')}
-              title="Xem trước văn bản thể thức hành chính A4 chi tiết"
+              title="Xem trước văn bản chuẩn A4"
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                 currentView === 'preview'
                   ? 'bg-white text-blue-700 shadow-xs'
@@ -255,7 +242,22 @@ export const Topbar: React.FC<TopbarProps> = ({
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Xem văn bản chi tiết</span>
+              <span>Xem trước A4</span>
+            </button>
+
+            <button
+              type="button"
+              id="tab-view-history"
+              onClick={() => onNavigate('history')}
+              title="Danh sách biên bản các tháng"
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
+                currentView === 'history'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Lịch sử các tháng</span>
             </button>
           </div>
 

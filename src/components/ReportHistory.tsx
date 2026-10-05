@@ -119,30 +119,21 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center flex-wrap gap-2.5">
+          <div className="flex items-center flex-wrap gap-2">
             {userRole === 'admin' ? (
               <>
                 <button
-                  onClick={onNewReport}
-                  title="Tạo biên bản cho tháng mới"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer ring-2 ring-emerald-600/25"
-                >
-                  <PlusCircle className="w-4 h-4 text-white stroke-[2.5]" />
-                  <span>+ Tạo báo cáo mới</span>
-                </button>
-
-                <button
                   onClick={handleExportBackup}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition-colors cursor-pointer"
                   title="Tải về file sao lưu toàn bộ biên bản"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Sao lưu JSON</span>
+                  <span>Sao lưu</span>
                 </button>
 
-                <label className="flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 cursor-pointer transition-colors">
+                <label className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 cursor-pointer transition-colors">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Nhập sao lưu</span>
+                  <span>Khôi phục</span>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -155,10 +146,10 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
             ) : (
               <button
                 onClick={onOpenAdminLogin}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-300 transition-colors cursor-pointer"
-                title="Đăng nhập tài khoản Quản trị viên để chỉnh sửa dữ liệu"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors cursor-pointer"
+                title="Đăng nhập Quản trị viên"
               >
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <Lock className="w-3.5 h-3.5" />
                 <span>Đăng nhập Admin</span>
               </button>
             )}
@@ -249,30 +240,30 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                         {new Date(item.updated_at || item.created_at).toLocaleString('vi-VN')}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                          {/* Sửa báo cáo: Chỉ hiển thị khi đã đăng nhập quyền admin */}
+                        <div className="flex items-center justify-center gap-1 flex-wrap">
+                          {/* Sửa báo cáo */}
                           {userRole === 'admin' && (
                             <button
                               onClick={() => {
                                 const full = storageService.getReportById(item.id) || item;
                                 onSelectReport(full);
                               }}
-                              className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
-                              title="Sửa nội dung biên bản tháng này"
+                              className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                              title="Sửa biên bản"
                             >
                               <Edit className="w-3.5 h-3.5" />
                               <span>Sửa</span>
                             </button>
                           )}
 
-                          {/* Xem chi tiết văn bản chuẩn A4 */}
+                          {/* Xem A4 */}
                           <button
                             onClick={() => {
                               const full = storageService.getReportById(item.id) || item;
                               onViewReportDetail(full);
                             }}
-                            className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
-                            title="Xem chi tiết văn bản Mẫu PC02 định dạng chuẩn A4 (có Phụ lục I và Phụ lục II)"
+                            className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                            title="Xem trước A4"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Xem</span>
@@ -284,31 +275,32 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                               const full = storageService.getReportById(item.id) || item;
                               exportReportToDocx(full);
                             }}
-                            className="px-2.5 py-1.5 bg-[#218838] hover:bg-[#1e7e34] text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
-                            title="Tải văn bản Word .docx (kèm Phụ lục ảnh, Google Sheet và PDF)"
+                            className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                            title="Xuất file Word"
                           >
                             <Download className="w-3.5 h-3.5" />
                             <span>Word</span>
                           </button>
 
+                          {/* In ấn */}
                           <button
                             onClick={() => {
                               const full = storageService.getReportById(item.id) || item;
                               onPreviewPrint(full);
                             }}
-                            className="px-2.5 py-1.5 bg-sky-700 hover:bg-sky-600 text-white rounded text-xs font-semibold flex items-center gap-1 shadow-2xs cursor-pointer"
-                            title="Xem trước định dạng chuẩn A4 & In"
+                            className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                            title="In văn bản"
                           >
                             <Printer className="w-3.5 h-3.5" />
-                            <span>In / PDF</span>
+                            <span>In</span>
                           </button>
 
-                          {/* Tạo bản sao: Chỉ hiển thị cho Admin */}
+                          {/* Tạo bản sao: Chỉ cho Admin */}
                           {userRole === 'admin' && (
                             <button
                               onClick={() => handleDuplicate(item.id)}
-                              className="px-2 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs font-semibold cursor-pointer"
-                              title="Tạo bản sao biên bản này"
+                              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                              title="Nhân bản biên bản"
                             >
                               <Copy className="w-3.5 h-3.5" />
                             </button>
@@ -318,8 +310,8 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                           {userRole === 'admin' && (
                             <button
                               onClick={() => handleDelete(item.id)}
-                              className="px-2 py-1.5 bg-[#dc4c4c] hover:bg-[#c62828] text-white rounded text-xs font-semibold shadow-2xs cursor-pointer"
-                              title="Xóa biên bản này ngay lập tức"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                              title="Xóa biên bản"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

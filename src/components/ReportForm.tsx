@@ -539,17 +539,6 @@ export const ReportForm: React.FC<ReportFormProps> = ({
             </div>
           ))}
         </div>
-
-        <div className="mt-3 flex justify-start">
-          <button
-            type="button"
-            onClick={addPerson}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold border border-slate-300"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm dòng thành viên</span>
-          </button>
-        </div>
       </div>
 
       {/* ---------------- CARD 3: PHƯƠNG TIỆN, HỆ THỐNG PCCC (TABLE 1) ---------------- */}
@@ -947,10 +936,10 @@ export const ReportForm: React.FC<ReportFormProps> = ({
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
               <span>✍️</span>
-              <span>Chữ ký các thành viên & Lãnh đạo ký duyệt (Định dạng 2 cột chuẩn Mẫu PC02)</span>
+              <span>Chữ ký thành viên kiểm tra & Lãnh đạo ký duyệt</span>
             </h3>
             <span className="text-xs text-slate-500">
-              Chữ ký điện tử nét mực xanh chân thực được tích hợp tự động cho các cán bộ. Bấm vào chữ ký để vẽ lại hoặc đổi mẫu.
+              Nhấn vào từng ô chữ ký để ký tên hoặc đổi mẫu chữ ký.
             </span>
           </div>
         </div>
