@@ -65,7 +65,7 @@ export const DEFAULT_FIRE: FireSafetyItem[] = [
     stt: '2',
     name: 'Việc duy trì điều kiện an toàn phòng cháy trong sử dụng chất dễ cháy, nổ',
     qty: 'Không phát sinh',
-    ok: '/',
+    ok: 'Đảm bảo',
     bad: '/',
     note: '',
   },
