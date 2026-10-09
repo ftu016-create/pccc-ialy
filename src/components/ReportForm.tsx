@@ -589,7 +589,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
                       className="flex items-center gap-1 text-xs px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium shadow-2xs"
                     >
                       <Plus className="w-3 h-3" />
-                      <span>+ Thêm dòng mục {eq.stt}</span>
+                      <span>+ Thêm dòng</span>
                     </button>
                     <button
                       type="button"
@@ -708,7 +708,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-md text-xs font-bold shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Thêm dòng nguồn nhiệt</span>
+            <span>+ Thêm dòng</span>
           </button>
         </div>
 
@@ -803,7 +803,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-md text-xs font-bold shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Thêm dòng thoát nạn</span>
+            <span>+ Thêm dòng</span>
           </button>
         </div>
 
