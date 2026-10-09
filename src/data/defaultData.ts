@@ -55,7 +55,7 @@ export const DEFAULT_FIRE: FireSafetyItem[] = [
     id: 'f-1',
     stt: '1',
     name: 'Việc duy trì điều kiện an toàn phòng cháy trong sử dụng nguồn lửa, nguồn nhiệt, thiết bị, dụng cụ sinh lửa, sinh nhiệt',
-    qty: '99/2026/VHIALY-TĐIAL Mài hàn xâm thực BXCT của tổ máy H4 NMTĐ Ialy\n103/2026/VHIALY-TĐIAL Mài hàn xâm thực BXCT của tổ máy H4 NMTĐ Ialy\n115/2026/VHIALY-TĐIAL Mài hàn xâm thực BXCT của tổ máy H3 NMTĐ Ialy',
+    qty: 'Không phát sinh',
     ok: 'Đảm bảo',
     bad: '/',
     note: '',

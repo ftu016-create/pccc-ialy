@@ -355,17 +355,13 @@ export const PhotoAnnexManager: React.FC<PhotoAnnexManagerProps> = ({
                 <Camera className="w-4 h-4 text-emerald-600" />
                 PHỤ LỤC I: Hình ảnh thoát nạn Tháng {displayMonth} ({photos.length} hình • 4 hình / 1 trang)
               </h3>
-              <span className="text-xs text-slate-500 italic">
-                Hiển thị sau phần chữ ký trong Biên bản & chia đều 4 hình/trang khi xuất Word/PDF
-              </span>
+              
             </div>
 
             {photos.length === 0 ? (
               <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm">
                 <p className="font-medium text-slate-700 mb-1">Chưa có hình ảnh kiểm tra hiện trường nào được tải lên.</p>
-                <p className="text-xs text-slate-400">
-                  Hãy kéo thả ảnh hiện trường (.jpg, .png) vào ô phía trên hoặc bấm &apos;Chọn ảnh từ máy tính&apos; để hệ thống tự động nhận diện vị trí và phân loại.
-                </p>
+                
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -535,9 +531,7 @@ export const PhotoAnnexManager: React.FC<PhotoAnnexManagerProps> = ({
               </span>
             )}
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Tự động nối nguyên vẹn tất cả các trang PDF vào cuối biên bản Word (.docx) và file PDF khi xuất.
-          </p>
+          
         </div>
 
         {attachedPdfs.length === 0 ? (

@@ -450,11 +450,9 @@ export const ReportForm: React.FC<ReportFormProps> = ({
           <div>
             <h3 className="font-bold text-base text-[#17365d] flex items-center gap-2">
               <span>👥</span>
-              <span>1. Danh sách đoàn kiểm tra ("Chúng tôi gồm")</span>
+              <span>1. Danh sách đoàn kiểm tra</span>
             </h3>
-            <span className="text-xs text-slate-500">
-              Có thể thêm, bớt người, chọn nhanh từ danh sách đoàn hoặc nhập người mới bất kỳ.
-            </span>
+            
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -549,9 +547,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               <span>🚒</span>
               <span>2. Phương tiện, hệ thống PCCC, cứu nạn cứu hộ & nguồn nước</span>
             </h3>
-            <span className="text-xs text-slate-500">
-              Bảng kiểm kê thiết bị tại Nhà máy thủy điện Ialy (Mục I) và Ialy Mở rộng (Mục II). Mỗi mục đều có nút thêm/xóa dòng.
-            </span>
+            
           </div>
         </div>
 
@@ -703,9 +699,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               <span>🔥</span>
               <span>3. Nguồn lửa, nguồn nhiệt, thiết bị sinh nhiệt & chất dễ cháy nổ</span>
             </h3>
-            <span className="text-xs text-slate-500">
-              Kiểm tra việc sử dụng lửa/hàn mài xâm thực BXCT các tổ máy và chất dễ cháy nổ.
-            </span>
+            
           </div>
 
           <button
@@ -800,9 +794,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               <span>🚪</span>
               <span>4. Thoát nạn, ngăn cháy, chống cháy lan, chống khói</span>
             </h3>
-            <span className="text-xs text-slate-500">
-              Kiểm tra hành lang, cửa thoát nạn, cầu thang thoát nạn và các giải pháp ngăn cháy lan.
-            </span>
+            
           </div>
 
           <button
@@ -938,9 +930,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({
               <span>✍️</span>
               <span>Chữ ký thành viên kiểm tra & Lãnh đạo ký duyệt</span>
             </h3>
-            <span className="text-xs text-slate-500">
-              Nhấn vào từng ô chữ ký để ký tên hoặc đổi mẫu chữ ký.
-            </span>
+            
           </div>
         </div>
 
