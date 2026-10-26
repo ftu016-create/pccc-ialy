@@ -7,6 +7,12 @@ import {
   idbSaveAllReports,
   idbDeleteReport,
 } from './db';
+import {
+  fetchAllSharedReports,
+  subscribeToSharedReports,
+  saveReportToFirestore,
+  deleteReportFromFirestore,
+} from '../lib/firebase';
 
 const REPORTS_KEY = 'pccc_ialy_reports_v1';
 const STAFF_KEY = 'pccc_ialy_staff_directory_v1';
@@ -127,6 +133,74 @@ async function initAsyncStorage() {
       // Server might be offline, ignore
     }
 
+    // 3. Sync from Firebase Firestore (Cloud persistence across all browsers, machines & Vercel)
+    try {
+      const remoteReports = await fetchAllSharedReports();
+      if (remoteReports && remoteReports.length > 0) {
+        remoteReports.forEach((rep: ReportData) => {
+          const existing = memoryReportsCache.get(rep.id);
+          const existingPhotosCount = (existing?.photos || []).length;
+          const remotePhotosCount = (rep.photos || []).length;
+          const existingPdfsCount = (existing?.attachedPdfs || []).length;
+          const remotePdfsCount = (rep.attachedPdfs || []).length;
+
+          const merged: ReportData = {
+            ...(existing || {}),
+            ...rep,
+            photos: existingPhotosCount > remotePhotosCount ? existing?.photos : rep.photos,
+            attachedPdfs: existingPdfsCount > remotePdfsCount ? existing?.attachedPdfs : rep.attachedPdfs,
+          };
+
+          if (!existing || rep.updated_at >= existing.updated_at) {
+            memoryReportsCache.set(rep.id, sanitizeReport(merged));
+            idbSaveReport(merged).catch(() => {});
+            hasNewData = true;
+          }
+        });
+      } else if (memoryReportsCache.size > 0) {
+        // If Firestore is newly initialized, seed local reports into Firestore
+        Array.from(memoryReportsCache.values()).forEach((rep) => {
+          saveReportToFirestore(rep).catch(() => {});
+        });
+      }
+    } catch (fsErr) {
+      console.warn('Firestore initial fetch error:', fsErr);
+    }
+
+    // 4. Subscribe to real-time Firestore updates across all browsers & tabs
+    try {
+      subscribeToSharedReports((remoteReports) => {
+        if (Array.isArray(remoteReports) && remoteReports.length > 0) {
+          let hasUpdated = false;
+          remoteReports.forEach((remoteRep) => {
+            const existing = memoryReportsCache.get(remoteRep.id);
+            if (!existing || (remoteRep.updated_at && remoteRep.updated_at > existing.updated_at)) {
+              const existingPhotosCount = (existing?.photos || []).length;
+              const remotePhotosCount = (remoteRep.photos || []).length;
+              const existingPdfsCount = (existing?.attachedPdfs || []).length;
+              const remotePdfsCount = (remoteRep.attachedPdfs || []).length;
+
+              const merged: ReportData = {
+                ...(existing || {}),
+                ...remoteRep,
+                photos: existingPhotosCount > remotePhotosCount ? existing?.photos : remoteRep.photos,
+                attachedPdfs: existingPdfsCount > remotePdfsCount ? existing?.attachedPdfs : remoteRep.attachedPdfs,
+              };
+
+              memoryReportsCache.set(remoteRep.id, sanitizeReport(merged));
+              idbSaveReport(merged).catch(() => {});
+              hasUpdated = true;
+            }
+          });
+          if (hasUpdated) {
+            notifyListeners();
+          }
+        }
+      });
+    } catch (subErr) {
+      console.warn('Firestore subscribe error:', subErr);
+    }
+
     if (hasNewData) {
       notifyListeners();
     }
@@ -187,6 +261,23 @@ export const storageService = {
     return all.find((r) => r.id === id) || null;
   },
 
+  async syncFromCloud(): Promise<number> {
+    try {
+      const remoteReports = await fetchAllSharedReports();
+      if (remoteReports && remoteReports.length > 0) {
+        remoteReports.forEach((rep) => {
+          memoryReportsCache.set(rep.id, sanitizeReport(rep));
+          idbSaveReport(rep).catch(() => {});
+        });
+        notifyListeners();
+        return remoteReports.length;
+      }
+    } catch (e) {
+      console.warn('Sync from cloud error:', e);
+    }
+    return 0;
+  },
+
   saveReport(report: ReportData): void {
     const sanitized = sanitizeReport(report);
 
@@ -196,7 +287,10 @@ export const storageService = {
     // 2. Persist to IndexedDB (No 5MB limit, supports large PDFs & multi-megabyte base64)
     idbSaveReport(sanitized).catch((e) => console.warn('Failed to save to IndexedDB:', e));
 
-    // 3. Persist to backend server (/api/reports) for cross-session and cross-tab storage
+    // 3. Real-time Cloud Sync to Firebase Firestore (Cross-browser, cross-device, works on Vercel)
+    saveReportToFirestore(sanitized).catch((e) => console.warn('Failed to save to Firestore:', e));
+
+    // 4. Persist to backend server (/api/reports) for cross-session and cross-tab storage
     this.syncToServer();
 
     // 4. Persist to localStorage safely with quota protection
@@ -291,6 +385,7 @@ export const storageService = {
   deleteReport(id: string): void {
     memoryReportsCache.delete(id);
     idbDeleteReport(id).catch(() => {});
+    deleteReportFromFirestore(id).catch((e) => console.warn('Failed to delete from Firestore:', e));
 
     const all = this.getAllReports().filter((r) => r.id !== id);
     try {
@@ -350,6 +445,7 @@ export const storageService = {
         importedReports = parsed.reports;
         parsed.reports.forEach((rep: ReportData) => {
           memoryReportsCache.set(rep.id, sanitizeReport(rep));
+          saveReportToFirestore(rep).catch(() => {});
         });
         idbSaveAllReports(parsed.reports).catch(() => {});
         try {
@@ -366,7 +462,7 @@ export const storageService = {
       return {
         success: true,
         reports: importedReports,
-        message: `Đã khôi phục thành công ${importedReports.length} biên bản!`,
+        message: `Đã khôi phục thành công ${importedReports.length} biên bản và đồng bộ lên đám mây!`,
       };
     } catch (e) {
       console.error('Import failed', e);

@@ -207,14 +207,34 @@ export function subscribeToSharedReports(onReportsChange: (reports: ReportData[]
 export async function saveReportToFirestore(report: ReportData): Promise<void> {
   try {
     const docRef = doc(db, 'reports', report.id);
+    let jsonToSave = JSON.stringify(report);
+
+    // Firestore has a strict 1MB document limit. If payload is too large,
+    // strip heavy base64 strings so report structure, text, and metadata remain 100% synced.
+    if (jsonToSave.length > 900000) {
+      const lightweightReport: ReportData = {
+        ...report,
+        attachedPdfs: (report.attachedPdfs || []).map((p) => ({
+          ...p,
+          pdfData: p.pdfData && p.pdfData.length > 50000 ? '' : p.pdfData,
+          pageImages: (p.pageImages || []).slice(0, 1),
+        })),
+        photos: (report.photos || []).map((photo) => ({
+          ...photo,
+          imageData: photo.imageData && photo.imageData.length > 100000 ? '' : photo.imageData,
+        })),
+      };
+      jsonToSave = JSON.stringify(lightweightReport);
+    }
+
     await setDoc(
       docRef,
       {
         id: report.id,
         month: report.report_month || '',
         reportDate: report.header_day ? `${report.header_day}/${report.header_month}/${report.header_year}` : '',
-        dataJson: JSON.stringify(report),
-        updatedAt: new Date().toISOString(),
+        dataJson: jsonToSave,
+        updatedAt: report.updated_at || new Date().toISOString(),
       },
       { merge: true }
     );

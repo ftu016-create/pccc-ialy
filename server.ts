@@ -117,7 +117,7 @@ function saveStaffList(staff: { name: string; role: string }[]): void {
 // Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const reportId = req.params.id || 'general';
+    const reportId = String(req.params.id || 'general');
     const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
     const targetDir = isPdf ? path.join(DOCS_DIR, reportId) : path.join(IMAGES_DIR, reportId);
     if (!fs.existsSync(targetDir)) {
@@ -355,8 +355,8 @@ async function startServer() {
   });
 
   // 3. ATTACHMENTS MANAGEMENT (Multi-file upload)
-  app.post('/api/reports/:id/attachments', upload.array('files', 100), (req, res) => {
-    const reportId = req.params.id;
+  app.post('/api/reports/:id/attachments', upload.array('files', 100) as unknown as express.RequestHandler, (req: express.Request, res: express.Response) => {
+    const reportId = String(req.params.id || '');
     const reports = getAllReports();
     const reportIndex = reports.findIndex((r) => r.id === reportId);
 

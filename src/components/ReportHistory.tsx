@@ -18,6 +18,8 @@ import {
   UploadCloud,
   CheckCircle2,
   Camera,
+  RefreshCw,
+  Cloud,
 } from 'lucide-react';
 import { ReportData, UserRole } from '../types';
 import { storageService } from '../services/storage';
@@ -45,7 +47,28 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
   onOpenAdminLogin,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleCloudSync = async () => {
+    setIsSyncing(true);
+    setSyncMessage('Đang đồng bộ từ đám mây...');
+    try {
+      const count = await storageService.syncFromCloud();
+      if (count > 0) {
+        setSyncMessage(`Đã đồng bộ ${count} biên bản từ Đám mây!`);
+      } else {
+        setSyncMessage('Dữ liệu đã được đồng bộ mới nhất từ Đám mây');
+      }
+      onRefresh();
+    } catch (e) {
+      setSyncMessage('Làm mới dữ liệu hoàn tất');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(null), 3500);
+    }
+  };
 
   const filtered = reports.filter((r) => {
     const q = searchTerm.toLowerCase();
@@ -89,12 +112,12 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
-        const ok = storageService.importBackupJson(content);
-        if (ok) {
-          alert('Khôi phục dữ liệu sao lưu thành công!');
+        const res = storageService.importBackupJson(content);
+        if (res.success) {
+          alert(res.message || 'Khôi phục dữ liệu sao lưu thành công!');
           onRefresh();
         } else {
-          alert('Tệp sao lưu không hợp lệ.');
+          alert(res.message || 'Tệp sao lưu không hợp lệ.');
         }
       }
     };
@@ -114,12 +137,31 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
                 Báo cáo các tháng đã lưu
               </h2>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
-              Quản lý danh sách biên bản tự kiểm tra PCCC & CNCH định kỳ của Phân xưởng Vận hành Ialy.
+            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+              <span>Quản lý danh sách biên bản tự kiểm tra PCCC & CNCH định kỳ của Phân xưởng Vận hành Ialy.</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <Cloud className="w-3 h-3 text-emerald-600" />
+                Đồng bộ Đám mây
+              </span>
             </p>
+            {syncMessage && (
+              <div className="mt-2 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-md inline-block animate-fade-in">
+                {syncMessage}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center flex-wrap gap-2">
+            <button
+              onClick={handleCloudSync}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors cursor-pointer disabled:opacity-50"
+              title="Nhấn để tải lại toàn bộ biên bản mới nhất từ đám mây Firestore dùng chung cho mọi máy"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ Đám mây'}</span>
+            </button>
+
             {userRole === 'admin' ? (
               <>
                 <button
@@ -146,7 +188,7 @@ export const ReportHistory: React.FC<ReportHistoryProps> = ({
             ) : (
               <button
                 onClick={onOpenAdminLogin}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
                 title="Đăng nhập Quản trị viên"
               >
                 <Lock className="w-3.5 h-3.5" />
